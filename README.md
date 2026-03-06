@@ -1,6 +1,5 @@
-# 🧠 MultiWayLearn — 6 Sefer Kelime Ezberleme Sistemi
+#  MultiWayLearn — 6 Sefer Kelime Ezberleme Sistemi
 
-Manisa Celal Bayar Üniversitesi — YZM 2122 Yazılım Yapımı Dersi Projesi
 
 ---
 
@@ -8,8 +7,8 @@ Manisa Celal Bayar Üniversitesi — YZM 2122 Yazılım Yapımı Dersi Projesi
 
 | İsim | GitHub |
 |------|--------|
-| [Kişi 1 Adı Soyadı] | [@DevVettel](https://github.com/DevVettel) |
-| [Kişi 2 Adı Soyadı] | [@okantao](https://github.com/okantao) |
+| ENES ÖZTÜRK | [@DevVettel](https://github.com/DevVettel) |
+| OKAN VAROL  | [@okantao](https://github.com/okantao) |
 
 ---
 
@@ -28,10 +27,10 @@ Bir kelimeyi gerçekten öğrenmiş sayılmak için:
 ## 🚀 Özellikler
 
 - ✅ Kullanıcı kayıt, giriş ve şifremi unuttum
-- ✅ Kelime ekleme (resim + örnek cümle + opsiyonel ses)
+- ✅ Kelime ekleme (resim + örnek cümle)
 - ✅ 6 Sefer quiz algoritması (aralıklı tekrar)
 - ✅ Kullanıcı ayarları (günlük yeni kelime sayısı)
-- ✅ Analiz raporu (yazdırılabilir)
+- ✅ Analiz raporu
 - ✅ Word Chain + LLM hikaye üretimi
 
 ---
@@ -62,28 +61,3 @@ multiWayLearn/
 ├── backend/         ← Node.js + Express API
 └── README.md
 ```
-
----
-
-## ▶️ Kurulum
-
-> Sprint 1 sonunda doldurulacak.
-
----
-
-## 📊 User Story Durumu
-
-| Story | Açıklama | Durum |
-|-------|----------|-------|
-| Story 1 | Kullanıcı Kayıt & Giriş | 🔄 Devam ediyor |
-| Story 2 | Kelime Ekleme Modülü | 📋 Bekliyor |
-| Story 3 | 6 Sefer Quiz Algoritması | 📋 Bekliyor |
-| Story 4 | Kullanıcı Ayarları | 📋 Bekliyor |
-| Story 5 | Analiz Raporu | 📋 Bekliyor |
-| Story 6 | Word Chain + LLM | 📋 Bekliyor |
-
----
-
-## 📝 Lisans
-
-Bu proje Manisa Celal Bayar Üniversitesi YZM 2122 dersi kapsamında geliştirilmiştir.
