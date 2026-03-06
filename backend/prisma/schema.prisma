@@ -1,0 +1,45 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id            Int       @id @default(autoincrement())
+  email         String    @unique
+  password      String
+  username      String
+  dailyNewWords Int       @default(10)
+  createdAt     DateTime  @default(now())
+  words         Word[]
+  quizLogs      QuizLog[]
+}
+
+model Word {
+  id        Int       @id @default(autoincrement())
+  english   String
+  turkish   String
+  sentences String
+  imageUrl  String?
+  audioUrl  String?
+  createdAt DateTime  @default(now())
+  userId    Int
+  user      User      @relation(fields: [userId], references: [id])
+  quizLogs  QuizLog[]
+}
+
+model QuizLog {
+  id             Int       @id @default(autoincrement())
+  userId         Int
+  wordId         Int
+  stage          Int       @default(0)
+  correctStreak  Int       @default(0)
+  nextReviewAt   DateTime  @default(now())
+  lastAnsweredAt DateTime?
+  isLearned      Boolean   @default(false)
+  user           User      @relation(fields: [userId], references: [id])
+  word           Word      @relation(fields: [wordId], references: [id])
+}
