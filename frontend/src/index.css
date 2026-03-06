@@ -1,1 +1,154 @@
-@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 47 47% 95%;
+    --foreground: 195 85% 15%;
+    --card: 0 0% 100%;
+    --card-foreground: 195 85% 15%;
+    --primary: 191 85% 27%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 316 40% 80%;
+    --secondary-foreground: 195 85% 15%;
+    --muted: 195 15% 92%;
+    --muted-foreground: 195 20% 45%;
+    --accent: 316 40% 80%;
+    --accent-foreground: 195 85% 15%;
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 195 20% 88%;
+    --input: 195 20% 88%;
+    --ring: 191 85% 27%;
+    --radius: 0.75rem;
+    --gradient-primary: linear-gradient(135deg, hsl(191, 85%, 27%), hsl(316, 40%, 80%));
+    --shadow-card: 0 4px 24px -4px hsl(191 85% 27% / 0.08);
+    --shadow-card-hover: 0 8px 32px -4px hsl(191 85% 27% / 0.15);
+  }
+
+  .dark {
+    --background: 210 30% 8%;
+    --foreground: 210 20% 92%;
+    --card: 210 25% 12%;
+    --card-foreground: 210 20% 92%;
+    --primary: 191 75% 35%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 316 35% 45%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 210 20% 18%;
+    --muted-foreground: 210 15% 60%;
+    --accent: 316 35% 45%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 210 20% 20%;
+    --input: 210 20% 20%;
+    --ring: 191 75% 35%;
+    --gradient-primary: linear-gradient(135deg, hsl(191, 75%, 35%), hsl(316, 35%, 45%));
+    --shadow-card: 0 4px 24px -4px hsl(0 0% 0% / 0.3);
+    --shadow-card-hover: 0 8px 32px -4px hsl(191 75% 35% / 0.2);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    transition: background-color 0.5s ease, color 0.5s ease;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Space Grotesk', sans-serif;
+  }
+}
+
+@layer utilities {
+  .gradient-text {
+    @apply bg-clip-text text-transparent;
+    background-image: var(--gradient-primary);
+  }
+
+  .gradient-bg {
+    background-image: var(--gradient-primary);
+  }
+
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+
+  .shadow-card-hover {
+    box-shadow: var(--shadow-card-hover);
+  }
+}
+
+/* Smooth tema geçişi */
+*,
+*::before,
+*::after {
+  transition: background-color 0.4s ease, border-color 0.4s ease, color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Animasyonlu elementleri geçişten muaf tut */
+.animate-fade-in-up,
+.animate-fade-in,
+.animate-scale-in {
+  transition: none !important;
+}
+
+/* Keyframes */
+@keyframes fade-in-up {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes scale-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Animasyon sınıfları */
+.animate-fade-in-up {
+  animation: fade-in-up 0.6s ease-out forwards;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.4s ease-out forwards;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.4s ease-out forwards;
+}
+/*delay için sınıflar*/
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.1s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.2s; }
+.stagger-5 { animation-delay: 0.25s; }
+.stagger-6 { animation-delay: 0.3s; }
+.stagger-7 { animation-delay: 0.35s; }
+.stagger-8 { animation-delay: 0.4s; }
+.stagger-9 { animation-delay: 0.45s; }
