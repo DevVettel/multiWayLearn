@@ -10,5 +10,11 @@ API.interceptors.request.use((config) => {
   return config;
 });
 
+// Auth
 export const register = (data) => API.post('/auth/register', data);
 export const login = (data) => API.post('/auth/login', data);
+
+// Kelimeler
+export const getWords = () => API.get('/words');
+export const addWord = (data) => API.post('/words', data);
+export const deleteWord = (id) => API.delete(`/words/${id}`);
