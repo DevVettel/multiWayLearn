@@ -18,3 +18,8 @@ export const login = (data) => API.post('/auth/login', data);
 export const getWords = () => API.get('/words');
 export const addWord = (data) => API.post('/words', data);
 export const deleteWord = (id) => API.delete(`/words/${id}`);
+
+
+// Seviye sistemi
+export const getLevelProgress = () => API.get('/levels/progress');
+export const getLevelWords = (level) => API.get(`/levels/words/${level}`);
