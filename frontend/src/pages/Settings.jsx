@@ -21,15 +21,17 @@ export default function Settings() {
   }, []);
 
   const handleSave = async () => {
+    console.log('Kaydedilen değer:', dailyGoal, typeof dailyGoal);
     setLoading(true);
     setError('');
     setSuccess('');
     try {
-      await updateDailyGoal(dailyGoal);
+      await updateDailyGoal(Number(dailyGoal));
       setSuccess('Günlük hedef güncellendi!');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError(err.response?.data?.error || 'Hata oluştu (something went wrong.)');
+      console.error('Hata:', err.response?.data);
+      setError(err.response?.data?.error || 'Hata oluştu');
     } finally {
       setLoading(false);
     }
@@ -71,13 +73,17 @@ export default function Settings() {
         {/* Günlük Hedef */}
         <div className="bg-card rounded-2xl border border-border p-6 shadow-card">
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
-            <span className="flex items-center gap-2"><Target className="w-4 h-4" /> Günlük Hedef</span>
+            <span className="flex items-center gap-2">
+              <Target className="w-4 h-4" /> Günlük Hedef
+            </span>
           </h2>
 
           {/* Hazır seçenekler */}
           <div className="grid grid-cols-3 gap-3 mb-5">
             {PRESET_GOALS.map(goal => (
-              <button key={goal} onClick={() => setDailyGoal(goal)}
+              <button
+                key={goal}
+                onClick={() => setDailyGoal(goal)}
                 className={`py-3 rounded-xl border text-sm font-semibold transition-all duration-200 ${
                   dailyGoal === goal
                     ? 'gradient-bg text-white border-transparent scale-105'
@@ -101,7 +107,6 @@ export default function Settings() {
             <span className="text-muted-foreground text-sm whitespace-nowrap">kelime / gün</span>
           </div>
 
-          {/* Bildirimler */}
           {error && (
             <div className="flex items-center gap-2 p-3 rounded-xl bg-destructive/10 text-destructive border border-destructive/20 mb-4 text-sm">
               <X className="w-4 h-4" /> {error}
@@ -113,7 +118,9 @@ export default function Settings() {
             </div>
           )}
 
-          <button onClick={handleSave} disabled={loading}
+          <button
+            onClick={handleSave}
+            disabled={loading}
             className="w-full py-3 rounded-xl gradient-bg text-white font-semibold transition-all hover:scale-[1.02] disabled:opacity-60">
             {loading ? 'Kaydediliyor...' : 'Kaydet'}
           </button>
