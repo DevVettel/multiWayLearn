@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { getLevelProgress } from "../services/api";
 import { useTheme } from "../ThemeContext";
+import { getLevelProgress, getSettings } from '../services/api';
 import {
   Brain, BookOpen, BookMarked, Zap,
   Plus, FlaskConical, BarChart3, Gamepad2,
@@ -76,6 +76,8 @@ function Dashboard() {
   const [totalLearned, setTotalLearned] = useState(0);
   const [totalInProgress, setTotalInProgress] = useState(0);
 
+  const [dailyGoal, setDailyGoal] = useState(10);
+
   useEffect(() => {
     getLevelProgress()
       .then(res => {
@@ -83,7 +85,11 @@ function Dashboard() {
         setTotalLearned(res.data.reduce((sum, l) => sum + l.learned, 0));
         setTotalInProgress(res.data.reduce((sum, l) => sum + l.inProgress, 0));
       })
-      .catch(() => {});
+      .catch(() => { });
+
+    getSettings()
+      .then(res => setDailyGoal(res.data.DailyWordCount || 10))
+      .catch(() => { });
   }, []);
 
   const handleLogout = () => {
@@ -94,7 +100,7 @@ function Dashboard() {
   const stats = [
     { icon: BookOpen, value: totalLearned, label: "Öğrenilen", color: "text-rose-400" },
     { icon: BookMarked, value: totalInProgress, label: "Devam Eden", color: "text-primary" },
-    { icon: Zap, value: 10, label: "Günlük Hedef", color: "text-amber-400" },
+    { icon: Zap, value: dailyGoal, label: "Günlük Hedef", color: "text-amber-400" },
   ];
 
   return (
@@ -144,8 +150,11 @@ function Dashboard() {
         {/* İstatistik kartları */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {stats.map((stat, i) => (
-            <div key={stat.label}
-              className={`opacity-0 animate-fade-in-up stagger-${i + 1} bg-card rounded-2xl border border-border p-6 shadow-card transition-all duration-300 hover:shadow-card-hover hover:scale-[1.02] group`}>
+            <div
+              key={stat.label}
+              onClick={() => stat.label === 'Günlük Hedef' && navigate('/settings')}
+              className={`opacity-0 animate-fade-in-up stagger-${i + 1} bg-card rounded-2xl border border-border p-6 shadow-card transition-all duration-300 hover:shadow-card-hover hover:scale-[1.02] group ${stat.label === 'Günlük Hedef' ? 'cursor-pointer hover:border-primary/50' : ''}`}
+            >
               <stat.icon className={`w-8 h-8 mb-3 ${stat.color} transition-transform duration-300 group-hover:scale-110`} />
               <p className="text-3xl font-bold font-display text-foreground">{stat.value}</p>
               <p className="text-sm text-muted-foreground mt-1">{stat.label}</p>

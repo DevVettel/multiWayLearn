@@ -3,6 +3,8 @@ const path = require('path');
 
 const db = new Database(path.join(__dirname, 'multiWayLearn.db'));
 
+db.pragma('foreign_keys = OFF');
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS Users (
     UserID INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -37,7 +39,7 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS UserWordProgress (
     ProgressID INTEGER PRIMARY KEY AUTOINCREMENT,
     UserID INTEGER REFERENCES Users(UserID),
-    WordID INTEGER REFERENCES Words(WordID),
+    WordID INTEGER,
     SystemWordID INTEGER REFERENCES SystemWords(SystemWordID),
     CorrectStreak INTEGER DEFAULT 0,
     TotalCorrect INTEGER DEFAULT 0,

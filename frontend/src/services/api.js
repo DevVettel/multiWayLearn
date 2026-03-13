@@ -23,3 +23,7 @@ export const deleteWord = (id) => API.delete(`/words/${id}`);
 // Seviye sistemi
 export const getLevelProgress = () => API.get('/levels/progress');
 export const getLevelWords = (level) => API.get(`/levels/words/${level}`);
+
+// Ayarlar
+export const getSettings = () => API.get('/settings');
+export const updateDailyGoal = (dailyWordCount) => API.put('/settings/daily-goal', { dailyWordCount });

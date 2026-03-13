@@ -12,10 +12,14 @@
 //              | |_| |   < (_| | | | | || (_| | (_) |        
 //               \___/|_|\_\__,_|_| |_|\__\__,_|\___/         
 
+
+
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Words from './pages/Words';
+import Quiz from './pages/Quiz';
+import Settings from './pages/Settings';
 
 function PrivateRoute({ children }) {
   const token = localStorage.getItem('token');
@@ -33,6 +37,12 @@ export default function App() {
         } />
         <Route path="/words" element={
           <PrivateRoute><Words /></PrivateRoute>
+        } />
+        <Route path="/quiz" element={
+          <PrivateRoute><Quiz /></PrivateRoute>
+        } />
+        <Route path="/settings" element={
+          <PrivateRoute><Settings /></PrivateRoute>
         } />
       </Routes>
     </BrowserRouter>

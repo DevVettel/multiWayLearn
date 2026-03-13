@@ -6,6 +6,8 @@ const path = require('path');
 const authRoutes = require('./routes/auth');
 const wordRoutes = require('./routes/words');
 const levelRoutes = require('./routes/levels');
+const quizRoutes = require('./routes/quiz');
+const settingsRoutes = require('./routes/settings');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -19,6 +21,8 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/auth', authRoutes);
 app.use('/api/words', wordRoutes);
 app.use('/api/levels', levelRoutes);
+app.use('/api/quiz', quizRoutes);
+app.use('/api/settings', settingsRoutes);
 
 app.get('/', (req, res) => {
   res.json({ message: 'MultiWayLearn API çalışıyor!' });
