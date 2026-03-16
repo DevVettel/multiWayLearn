@@ -5,8 +5,9 @@ const authMiddleware = require('../middleware/auth');
 
 const REVIEW_INTERVALS = [1, 7, 30, 90, 180, 365];
 
-function getUnlockedLevels(userID) {
-  const unlocked = ['A1'];
+function getUnlockedLevels(userID, manualLevels = []) {
+  const unlocked = new Set(manualLevels.length > 0 ? manualLevels : ['A1']);
+
   const a1Learned = db.prepare(`
     SELECT COUNT(*) as count FROM UserWordProgress uwp
     JOIN SystemWords sw ON uwp.SystemWordID = sw.SystemWordID
@@ -14,26 +15,25 @@ function getUnlockedLevels(userID) {
   `).get(userID).count;
 
   if (a1Learned >= 350) {
-    unlocked.push('A2');
+    unlocked.add('A2');
     const a2Learned = db.prepare(`
       SELECT COUNT(*) as count FROM UserWordProgress uwp
       JOIN SystemWords sw ON uwp.SystemWordID = sw.SystemWordID
       WHERE uwp.UserID = ? AND sw.Level = 'A2' AND uwp.IsLearned = 1
     `).get(userID).count;
-    if (a2Learned >= 250) unlocked.push('B1');
+    if (a2Learned >= 250) unlocked.add('B1');
   }
-  return unlocked;
+
+  return [...unlocked];
 }
 
-// Quiz sorusu getir
 router.get('/next', authMiddleware, (req, res) => {
   const userID = req.user.userID;
+  const manualLevels = req.query.levels ? req.query.levels.split(',') : [];
 
-  // Kullanıcının günlük hedefini al
   const user = db.prepare('SELECT DailyWordCount FROM Users WHERE UserID = ?').get(userID);
   const dailyGoal = user?.DailyWordCount || 10;
 
-  // Bugün kaç kelime çalışıldı
   const todayCount = db.prepare(`
     SELECT COUNT(*) as count FROM UserWordProgress
     WHERE UserID = ? AND date(LastSeen) = date('now')
@@ -43,12 +43,13 @@ router.get('/next', authMiddleware, (req, res) => {
     return res.json({ finished: true, reason: 'daily_goal', dailyGoal, todayCount });
   }
 
-  const unlockedLevels = getUnlockedLevels(userID);
+  const unlockedLevels = getUnlockedLevels(userID, manualLevels);
   const placeholders = unlockedLevels.map(() => '?').join(',');
 
-  // Tekrar zamanı gelmiş kelimeler
+  // Tekrar zamanı gelmiş sistem kelimesi
   let word = db.prepare(`
-    SELECT sw.*, uwp.CorrectStreak, uwp.ProgressID, uwp.TotalCorrect, uwp.TotalWrong
+    SELECT sw.EngWordName, sw.TurWordName, sw.Level, sw.SystemWordID,
+           uwp.CorrectStreak, uwp.TotalCorrect, uwp.TotalWrong, 'system' as wordType
     FROM UserWordProgress uwp
     JOIN SystemWords sw ON uwp.SystemWordID = sw.SystemWordID
     WHERE uwp.UserID = ?
@@ -59,37 +60,78 @@ router.get('/next', authMiddleware, (req, res) => {
     LIMIT 1
   `).get(userID, ...unlockedLevels);
 
-  // Yeni kelime
+  // Tekrar zamanı gelmiş kullanıcı kelimesi
   if (!word) {
-    const newWord = db.prepare(`
+    word = db.prepare(`
+      SELECT w.EngWordName, w.TurWordName, 'Kişisel' as Level, NULL as SystemWordID,
+             uwp.CorrectStreak, uwp.TotalCorrect, uwp.TotalWrong, 'user' as wordType,
+             w.WordID
+      FROM UserWordProgress uwp
+      JOIN Words w ON uwp.WordID = w.WordID
+      WHERE uwp.UserID = ?
+        AND uwp.IsLearned = 0
+        AND uwp.WordID IS NOT NULL
+        AND datetime(uwp.NextReview) <= datetime('now')
+      ORDER BY uwp.NextReview ASC
+      LIMIT 1
+    `).get(userID);
+  }
+
+  // Yeni sistem kelimesi
+  if (!word) {
+    const newSysWord = db.prepare(`
       SELECT sw.* FROM SystemWords sw
       WHERE sw.Level IN (${placeholders})
         AND sw.SystemWordID NOT IN (
-          SELECT SystemWordID FROM UserWordProgress WHERE UserID = ?
+          SELECT SystemWordID FROM UserWordProgress 
+          WHERE UserID = ? AND SystemWordID IS NOT NULL
         )
-      ORDER BY sw.SystemWordID ASC
+      ORDER BY RANDOM()
       LIMIT 1
     `).get(...unlockedLevels, userID);
 
-    if (!newWord) {
-      return res.json({ finished: true, reason: 'all_learned', dailyGoal, todayCount });
+    if (newSysWord) {
+      db.prepare(`
+        INSERT INTO UserWordProgress (UserID, WordID, SystemWordID, CorrectStreak, NextReview)
+        VALUES (?, NULL, ?, 0, datetime('now'))
+      `).run(userID, newSysWord.SystemWordID);
+      word = { ...newSysWord, CorrectStreak: 0, TotalCorrect: 0, TotalWrong: 0, wordType: 'system' };
     }
+  }
 
-    db.prepare(`
-      INSERT INTO UserWordProgress (UserID, WordID, SystemWordID, CorrectStreak, NextReview)
-      VALUES (?, NULL, ?, 0, datetime('now'))
-    `).run(userID, newWord.SystemWordID);
+  // Yeni kullanıcı kelimesi
+  if (!word) {
+    const newUserWord = db.prepare(`
+      SELECT w.* FROM Words w
+      WHERE w.CreatedBy = ?
+        AND w.WordID NOT IN (
+          SELECT WordID FROM UserWordProgress 
+          WHERE UserID = ? AND WordID IS NOT NULL
+        )
+      ORDER BY RANDOM()
+      LIMIT 1
+    `).get(userID, userID);
 
-    word = { ...newWord, CorrectStreak: 0, TotalCorrect: 0, TotalWrong: 0 };
+    if (newUserWord) {
+      db.prepare(`
+        INSERT INTO UserWordProgress (UserID, WordID, SystemWordID, CorrectStreak, NextReview)
+        VALUES (?, ?, NULL, 0, datetime('now'))
+      `).run(userID, newUserWord.WordID);
+      word = { ...newUserWord, CorrectStreak: 0, TotalCorrect: 0, TotalWrong: 0, wordType: 'user', Level: 'Kişisel' };
+    }
+  }
+
+  if (!word) {
+    return res.json({ finished: true, reason: 'all_learned', dailyGoal, todayCount });
   }
 
   // Yanlış şıklar
   const wrongOptions = db.prepare(`
     SELECT TurWordName FROM SystemWords
-    WHERE SystemWordID != ? AND Level IN (${placeholders})
+    WHERE TurWordName != ?
     ORDER BY RANDOM()
     LIMIT 3
-  `).all(word.SystemWordID, ...unlockedLevels);
+  `).all(word.TurWordName);
 
   const options = [
     { text: word.TurWordName, correct: true },
@@ -101,7 +143,9 @@ router.get('/next', authMiddleware, (req, res) => {
     dailyGoal,
     todayCount,
     word: {
-      systemWordID: word.SystemWordID,
+      systemWordID: word.SystemWordID || null,
+      wordID: word.WordID || null,
+      wordType: word.wordType,
       engWord: word.EngWordName,
       turWord: word.TurWordName,
       level: word.Level,
@@ -113,14 +157,20 @@ router.get('/next', authMiddleware, (req, res) => {
   });
 });
 
-// Cevabı işle
 router.post('/answer', authMiddleware, (req, res) => {
   const userID = req.user.userID;
-  const { systemWordID, correct } = req.body;
+  const { systemWordID, wordID, correct } = req.body;
 
-  const progress = db.prepare(`
-    SELECT * FROM UserWordProgress WHERE UserID = ? AND SystemWordID = ?
-  `).get(userID, systemWordID);
+  let progress;
+  if (systemWordID) {
+    progress = db.prepare(`
+      SELECT * FROM UserWordProgress WHERE UserID = ? AND SystemWordID = ?
+    `).get(userID, systemWordID);
+  } else {
+    progress = db.prepare(`
+      SELECT * FROM UserWordProgress WHERE UserID = ? AND WordID = ?
+    `).get(userID, wordID);
+  }
 
   if (!progress) return res.status(404).json({ error: 'Progress bulunamadı' });
 
@@ -145,8 +195,8 @@ router.post('/answer', authMiddleware, (req, res) => {
       LastSeen = datetime('now'),
       NextReview = ${nextReviewExpr},
       IsLearned = ?
-    WHERE UserID = ? AND SystemWordID = ?
-  `).run(newStreak, correct ? 1 : 0, correct ? 0 : 1, isLearned, userID, systemWordID);
+    WHERE ProgressID = ?
+  `).run(newStreak, correct ? 1 : 0, correct ? 0 : 1, isLearned, progress.ProgressID);
 
   res.json({
     correct,
@@ -156,11 +206,10 @@ router.post('/answer', authMiddleware, (req, res) => {
       ? '🎉 Kelime öğrenildi!'
       : correct
         ? `✓ Doğru! Seri: ${newStreak}/6`
-        : '✗ Maalesef yanlış, seri sıfırlandı'
+        : '✗ Yanlış, seri sıfırlandı'
   });
 });
 
-// İstatistikler
 router.get('/stats', authMiddleware, (req, res) => {
   const userID = req.user.userID;
   const user = db.prepare('SELECT DailyWordCount FROM Users WHERE UserID = ?').get(userID);

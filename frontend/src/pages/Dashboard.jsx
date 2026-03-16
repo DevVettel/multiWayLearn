@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useTheme } from "../ThemeContext";
-import { getLevelProgress, getSettings } from '../services/api';
+import { getLevelProgress, getSettings } from "../services/api";
 import {
   Brain, BookOpen, BookMarked, Zap,
   Plus, FlaskConical, BarChart3, Gamepad2,
-  Link2, Settings, LogOut, ArrowRight, Lock
+  Link2, Settings, LogOut, ArrowRight, Lock, Unlock
 } from "lucide-react";
 import { ThemeToggle } from "../components/ThemeToggle";
 
@@ -24,24 +23,34 @@ const levelColors = {
   B1: { bar: "from-violet-500 to-purple-500", badge: "bg-violet-500/10 text-violet-500 border-violet-500/20" },
 };
 
-function LevelCard({ data, index }) {
+function LevelCard({ data, index, isActive, onToggle }) {
   const colors = levelColors[data.level];
 
   return (
-    <div className={`opacity-0 animate-fade-in-up stagger-${index + 1} bg-card rounded-2xl border border-border p-5 shadow-card transition-all duration-300 ${data.isUnlocked ? 'hover:shadow-card-hover hover:scale-[1.02]' : 'opacity-60'}`}>
+    <div className={`opacity-0 animate-fade-in-up stagger-${index + 1} bg-card rounded-2xl border p-5 shadow-card transition-all duration-300 hover:shadow-card-hover hover:scale-[1.02] ${isActive ? 'border-primary/50' : 'border-border'}`}>
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <span className={`text-xs font-bold px-2 py-1 rounded-lg border ${colors.badge}`}>
             {data.level}
           </span>
-          {!data.isUnlocked && <Lock className="w-4 h-4 text-muted-foreground" />}
+          <span className="text-xs text-muted-foreground">{data.learned} / {data.unlockThreshold} öğrenildi</span>
         </div>
-        <span className="text-xs text-muted-foreground">{data.learned} / {data.unlockThreshold} öğrenildi</span>
+        {/* Toggle butonu */}
+        <button
+          onClick={() => onToggle(data.level)}
+          className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
+            isActive
+              ? 'bg-primary/10 text-primary border border-primary/30 hover:bg-primary/20'
+              : 'bg-muted text-muted-foreground border border-border hover:border-primary/30 hover:text-primary'
+          }`}>
+          {isActive ? <Unlock className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
+          {isActive ? 'Aktif' : 'Aktif Et'}
+        </button>
       </div>
 
       <div className="mb-3">
         <div className="flex justify-between text-xs text-muted-foreground mb-1">
-          <span>{data.isUnlocked ? 'İlerleme' : 'Kilitli'}</span>
+          <span>İlerleme</span>
           <span>%{data.percentage}</span>
         </div>
         <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
@@ -57,9 +66,9 @@ function LevelCard({ data, index }) {
         <span>Devam eden: {data.inProgress}</span>
       </div>
 
-      {data.isUnlocked && data.learned < data.unlockThreshold && (
+      {data.learned < data.unlockThreshold && isActive && (
         <p className="text-xs text-muted-foreground mt-2">
-          Sonraki seviye için <span className="text-primary font-semibold">{data.unlockThreshold - data.learned} kelime</span> daha öğren
+          Otomatik kilit için <span className="text-primary font-semibold">{data.unlockThreshold - data.learned} kelime</span> daha öğren
         </p>
       )}
       {data.learned >= data.unlockThreshold && (
@@ -75,8 +84,11 @@ function Dashboard() {
   const [levelProgress, setLevelProgress] = useState([]);
   const [totalLearned, setTotalLearned] = useState(0);
   const [totalInProgress, setTotalInProgress] = useState(0);
-
   const [dailyGoal, setDailyGoal] = useState(10);
+  const [activeLevels, setActiveLevels] = useState(() => {
+    const saved = localStorage.getItem('activeLevels');
+    return saved ? JSON.parse(saved) : ['A1'];
+  });
 
   useEffect(() => {
     getLevelProgress()
@@ -85,12 +97,24 @@ function Dashboard() {
         setTotalLearned(res.data.reduce((sum, l) => sum + l.learned, 0));
         setTotalInProgress(res.data.reduce((sum, l) => sum + l.inProgress, 0));
       })
-      .catch(() => { });
+      .catch(() => {});
 
     getSettings()
       .then(res => setDailyGoal(res.data.DailyWordCount || 10))
-      .catch(() => { });
+      .catch(() => {});
   }, []);
+
+  const handleLevelToggle = (level) => {
+    setActiveLevels(prev => {
+      const newLevels = prev.includes(level)
+        ? prev.filter(l => l !== level)
+        : [...prev, level];
+      // En az bir seviye aktif olmalı
+      if (newLevels.length === 0) return prev;
+      localStorage.setItem('activeLevels', JSON.stringify(newLevels));
+      return newLevels;
+    });
+  };
 
   const handleLogout = () => {
     localStorage.clear();
@@ -110,7 +134,6 @@ function Dashboard() {
         style={{
           backgroundColor: "hsl(var(--background) / 0.85)",
           backdropFilter: "blur(20px)",
-          transition: "background-color 0.5s ease",
         }}>
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3 opacity-0 animate-fade-in-up">
@@ -150,11 +173,9 @@ function Dashboard() {
         {/* İstatistik kartları */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {stats.map((stat, i) => (
-            <div
-              key={stat.label}
+            <div key={stat.label}
               onClick={() => stat.label === 'Günlük Hedef' && navigate('/settings')}
-              className={`opacity-0 animate-fade-in-up stagger-${i + 1} bg-card rounded-2xl border border-border p-6 shadow-card transition-all duration-300 hover:shadow-card-hover hover:scale-[1.02] group ${stat.label === 'Günlük Hedef' ? 'cursor-pointer hover:border-primary/50' : ''}`}
-            >
+              className={`opacity-0 animate-fade-in-up stagger-${i + 1} bg-card rounded-2xl border border-border p-6 shadow-card transition-all duration-300 hover:shadow-card-hover hover:scale-[1.02] group ${stat.label === 'Günlük Hedef' ? 'cursor-pointer hover:border-primary/50' : ''}`}>
               <stat.icon className={`w-8 h-8 mb-3 ${stat.color} transition-transform duration-300 group-hover:scale-110`} />
               <p className="text-3xl font-bold font-display text-foreground">{stat.value}</p>
               <p className="text-sm text-muted-foreground mt-1">{stat.label}</p>
@@ -165,10 +186,21 @@ function Dashboard() {
         {/* Seviye ilerleme kartları */}
         {levelProgress.length > 0 && (
           <div>
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">Seviye İlerlemesi</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Seviye İlerlemesi</h2>
+              <p className="text-xs text-muted-foreground">
+                Aktif: <span className="text-primary font-semibold">{activeLevels.join(', ')}</span>
+              </p>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {levelProgress.map((level, i) => (
-                <LevelCard key={level.level} data={level} index={i} />
+                <LevelCard
+                  key={level.level}
+                  data={level}
+                  index={i}
+                  isActive={activeLevels.includes(level.level)}
+                  onToggle={handleLevelToggle}
+                />
               ))}
             </div>
           </div>
@@ -180,7 +212,13 @@ function Dashboard() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {features.map((feature, i) => (
               <div key={feature.title}
-                onClick={() => navigate(feature.path)}
+                onClick={() => {
+                  if (feature.path === '/quiz') {
+                    navigate('/quiz', { state: { activeLevels } });
+                  } else {
+                    navigate(feature.path);
+                  }
+                }}
                 className={`opacity-0 animate-fade-in-up stagger-${i + 4} bg-card rounded-2xl border border-border p-6 shadow-card transition-all duration-300 hover:shadow-card-hover hover:scale-[1.02] group cursor-pointer`}>
                 <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3`}>
                   <feature.icon className="w-6 h-6 text-white" />

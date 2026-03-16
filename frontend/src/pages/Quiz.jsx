@@ -32,7 +32,8 @@ export default function Quiz() {
     setSelected(null);
     setResult(null);
     try {
-      const res = await API.get('/quiz/next');
+      const activeLevels = JSON.parse(localStorage.getItem('activeLevels') || '["A1"]');
+      const res = await API.get(`/quiz/next?levels=${activeLevels.join(',')}`);
       if (res.data.finished) {
         setFinished(true);
         setFinishReason(res.data.reason);
@@ -179,13 +180,12 @@ export default function Quiz() {
                 {question.level}
               </span>
               <div className="flex items-center gap-1">
-                {[1,2,3,4,5,6].map(i => (
+                {[1, 2, 3, 4, 5, 6].map(i => (
                   <div key={i}
-                    className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${
-                      i <= question.correctStreak
+                    className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${i <= question.correctStreak
                         ? 'bg-emerald-500 text-white scale-110'
                         : 'bg-muted text-muted-foreground'
-                    }`}>
+                      }`}>
                     {i}
                   </div>
                 ))}
@@ -234,11 +234,10 @@ export default function Quiz() {
             {/* Sonuç + Devam */}
             {result && (
               <div className="animate-fade-in-up">
-                <div className={`p-4 rounded-xl border mb-4 text-center font-semibold ${
-                  result.correct
+                <div className={`p-4 rounded-xl border mb-4 text-center font-semibold ${result.correct
                     ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
                     : 'bg-destructive/10 border-destructive/20 text-destructive'
-                }`}>
+                  }`}>
                   {result.message}
                 </div>
                 <button onClick={fetchNext}

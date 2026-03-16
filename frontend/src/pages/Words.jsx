@@ -9,7 +9,7 @@ import {
 export default function Words() {
   const [words, setWords] = useState([]);
   const [showForm, setShowForm] = useState(false);
-  const [editingWord, setEditingWord] = useState(null); 
+  const [editingWord, setEditingWord] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -116,7 +116,9 @@ export default function Words() {
             </button>
             <div>
               <h1 className="text-lg font-bold font-display">Kelime Yönetimi</h1>
-              <p className="text-xs text-muted-foreground">{words.length} kelime</p>
+              <p className="text-xs text-muted-foreground">
+                Toplam <span className="text-foreground font-semibold">{words.length}</span> kelime eklendi
+              </p>
             </div>
           </div>
           <button onClick={openAddForm}
@@ -166,7 +168,7 @@ export default function Words() {
 
               <div>
                 <label className="block text-sm font-medium mb-2 text-foreground flex items-center gap-2">
-                  <FileText className="w-4 h-4" /> Örnek Cümleler 
+                  <FileText className="w-4 h-4" /> Örnek Cümleler
                 </label>
                 {form.samples.map((sample, i) => (
                   <input key={i} type="text" value={sample}
