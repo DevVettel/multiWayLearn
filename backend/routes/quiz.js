@@ -29,7 +29,9 @@ function getUnlockedLevels(userID, manualLevels = []) {
 
 router.get('/next', authMiddleware, (req, res) => {
   const userID = req.user.userID;
-  const manualLevels = req.query.levels ? req.query.levels.split(',') : [];
+  const manualLevels = (typeof req.query.levels === 'string')
+    ? req.query.levels.split(',').filter(l => ['A1', 'A2', 'B1'].includes(l))
+    : [];
 
   const user = db.prepare('SELECT DailyWordCount FROM Users WHERE UserID = ?').get(userID);
   const dailyGoal = user?.DailyWordCount || 10;
