@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Brain, CheckCircle, XCircle, Trophy, Target } from 'lucide-react';
 import axios from 'axios';
 
@@ -14,6 +14,8 @@ const STREAK_LABELS = ['', '1. Gün', '1. Hafta', '1. Ay', '3. Ay', '6. Ay', '1.
 
 export default function Quiz() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const activeLevels = location.state?.activeLevels || JSON.parse(localStorage.getItem('activeLevels') || '["A1"]');
   const [question, setQuestion] = useState(null);
   const [options, setOptions] = useState([]);
   const [selected, setSelected] = useState(null);
@@ -24,21 +26,25 @@ export default function Quiz() {
   const [dailyGoal, setDailyGoal] = useState(10);
   const [todayCount, setTodayCount] = useState(0);
   const [sessionStats, setSessionStats] = useState({ correct: 0, wrong: 0, learned: 0 });
+  const [skippedIDs, setSkippedIDs] = useState([]);
 
-  useEffect(() => { fetchNext(); }, []);
+  useEffect(() => { fetchNext([]); }, []);
 
-  const fetchNext = async () => {
+  const fetchNext = async (currentSkipped = skippedIDs) => {
     setLoading(true);
     setSelected(null);
     setResult(null);
     try {
-      const activeLevels = JSON.parse(localStorage.getItem('activeLevels') || '["A1"]');
-      const res = await API.get(`/quiz/next?levels=${activeLevels.join(',')}`);
+      const params = new URLSearchParams();
+      if (currentSkipped.length > 0) params.append('skipped', currentSkipped.join(','));
+      params.append('levels', activeLevels.join(','));
+
+      const res = await API.get(`/quiz/next?${params.toString()}`);
       if (res.data.finished) {
-        setFinished(true);
-        setFinishReason(res.data.reason);
+        setFinishReason(res.data.reason || 'daily_goal');
         setDailyGoal(res.data.dailyGoal || 10);
         setTodayCount(res.data.todayCount || 0);
+        setFinished(true);
       } else {
         setQuestion(res.data.word);
         setOptions(res.data.options);
@@ -61,14 +67,28 @@ export default function Quiz() {
         correct: option.correct
       });
       setResult(res.data);
+      // Backend'den gelen güncel sayıları kullan
+      if (res.data.todayCount !== undefined) setTodayCount(res.data.todayCount);
+      if (res.data.dailyGoal !== undefined) setDailyGoal(res.data.dailyGoal);
       setSessionStats(prev => ({
         correct: prev.correct + (option.correct ? 1 : 0),
         wrong: prev.wrong + (option.correct ? 0 : 1),
         learned: prev.learned + (res.data.isLearned ? 1 : 0),
       }));
+      if (!option.correct) {
+        setSkippedIDs(prev => [...prev, question.systemWordID]);
+      }
     } catch {
       setResult({ correct: option.correct, message: 'Hata oluştu' });
     }
+  };
+
+  const handleNext = () => {
+    const newSkipped = !result?.correct
+      ? [...skippedIDs, question.systemWordID]
+      : skippedIDs;
+    setSkippedIDs(newSkipped);
+    fetchNext(newSkipped);
   };
 
   if (loading) return (
@@ -82,7 +102,7 @@ export default function Quiz() {
       <div className="text-center max-w-md w-full">
         <Trophy className="w-16 h-16 text-amber-400 mx-auto mb-4" />
         <h2 className="text-2xl font-bold font-display mb-2">
-          {finishReason === 'daily_goal' ? 'Günlük Hedefe Ulaştın! 🎯' : 'Harika iş!'}
+          {finishReason === 'daily_goal' ? 'Günlük Hedefe Ulaşıldı!' : 'Harika iş!'}
         </h2>
         <p className="text-muted-foreground mb-6">
           {finishReason === 'daily_goal'
@@ -183,8 +203,8 @@ export default function Quiz() {
                 {[1, 2, 3, 4, 5, 6].map(i => (
                   <div key={i}
                     className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${i <= question.correctStreak
-                        ? 'bg-emerald-500 text-white scale-110'
-                        : 'bg-muted text-muted-foreground'
+                      ? 'bg-emerald-500 text-white scale-110'
+                      : 'bg-muted text-muted-foreground'
                       }`}>
                     {i}
                   </div>
@@ -235,15 +255,27 @@ export default function Quiz() {
             {result && (
               <div className="animate-fade-in-up">
                 <div className={`p-4 rounded-xl border mb-4 text-center font-semibold ${result.correct
-                    ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
-                    : 'bg-destructive/10 border-destructive/20 text-destructive'
+                  ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
+                  : 'bg-destructive/10 border-destructive/20 text-destructive'
                   }`}>
                   {result.message}
                 </div>
-                <button onClick={fetchNext}
-                  className="w-full py-4 rounded-xl gradient-bg text-white font-semibold text-lg transition-all hover:scale-[1.02]">
-                  Sonraki Kelime →
-                </button>
+                {result.dailyGoalReached ? (
+                  <button onClick={() => {
+                    setTodayCount(result.todayCount);
+                    setDailyGoal(result.dailyGoal);
+                    setFinishReason('daily_goal');
+                    setFinished(true);
+                  }}
+                    className="w-full py-4 rounded-xl gradient-bg text-white font-semibold text-lg transition-all hover:scale-[1.02]">
+                    Sonuçları Gör
+                  </button>
+                ) : (
+                  <button onClick={handleNext}
+                    className="w-full py-4 rounded-xl gradient-bg text-white font-semibold text-lg transition-all hover:scale-[1.02]">
+                    Sonraki Kelime
+                  </button>
+                )}
               </div>
             )}
           </div>
