@@ -27,3 +27,6 @@ export const getLevelWords = (level) => API.get(`/levels/words/${level}`);
 // Ayarlar
 export const getSettings = () => API.get('/settings');
 export const updateDailyGoal = (dailyWordCount) => API.put('/settings/daily-goal', { dailyWordCount });
+
+// Analiz
+export const getAnalysis = () => API.get('/analysis');

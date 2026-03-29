@@ -20,6 +20,7 @@ import Dashboard from './pages/Dashboard';
 import Words from './pages/Words';
 import Quiz from './pages/Quiz';
 import Settings from './pages/Settings';
+import Analysis from './pages/Analysis';
 
 function PrivateRoute({ children }) {
   const token = localStorage.getItem('token');
@@ -43,6 +44,9 @@ export default function App() {
         } />
         <Route path="/settings" element={
           <PrivateRoute><Settings /></PrivateRoute>
+        } />
+        <Route path="/analysis" element={
+          <PrivateRoute><Analysis /></PrivateRoute>
         } />
       </Routes>
     </BrowserRouter>
