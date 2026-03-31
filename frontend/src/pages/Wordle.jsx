@@ -13,7 +13,7 @@ API.interceptors.request.use((config) => {
 const KEYBOARD_ROWS = [
   ['Q','W','E','R','T','Y','U','I','O','P'],
   ['A','S','D','F','G','H','J','K','L'],
-  ['ENTER','Z','X','C','V','B','N','M','DEL'],
+  ['DEL','Z','X','C','V','B','N','M','ENTER'],
 ];
 
 const TILE_COLORS = {
@@ -46,7 +46,8 @@ export default function Wordle() {
   const [wordInfo, setWordInfo] = useState(null);
   const [letterStates, setLetterStates] = useState({});
   const [targetWord, setTargetWord] = useState('');
-
+  const [btn1Img, setBtn1Img] = useState(() => localStorage.getItem('wordle-btn1-img') || '/resim1.jpg.jpg');
+  const [btn2Img, setBtn2Img] = useState(() => localStorage.getItem('wordle-btn2-img') || '/resim2.jpg.avif');
   const MAX_GUESSES = 6;
   const WORD_LENGTH = 5;
 
@@ -99,20 +100,17 @@ export default function Wordle() {
       setTimeout(() => setShake(false), 500);
       return;
     }
-
     try {
       const res = await API.post('/wordle/guess', {
         guess: currentGuess,
         target: targetWord,
       });
-
       const { result, isWon } = res.data;
       const newGuess = { guess: currentGuess, result };
       const newGuesses = [...guesses, newGuess];
       setGuesses(newGuesses);
       setCurrentGuess('');
 
-      // Klavye renklerini güncelle
       const newLetterStates = { ...letterStates };
       currentGuess.split('').forEach((letter, i) => {
         const current = newLetterStates[letter];
@@ -134,6 +132,8 @@ export default function Wordle() {
     }
   };
 
+  
+
   const rows = [];
   for (let i = 0; i < MAX_GUESSES; i++) {
     if (i < guesses.length) {
@@ -147,6 +147,8 @@ export default function Wordle() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+
+      
 
       {/* Header */}
       <header className="border-b border-border"
@@ -185,22 +187,48 @@ export default function Wordle() {
               ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
               : 'bg-destructive/10 border-destructive/20 text-destructive'
           }`}>
-            <p className="font-bold text-lg">{won ? 'You are so cooked!' : 'loserrrr'}</p>
-            <p className="text-sm mt-1">
+            <p className="font-bold text-lg text-white">
+              {won ? 'You are so cooked!' : 'loserrrr'}
+            </p>
+            <p className="text-sm mt-1 text-white/80">
               {won
                 ? `${guesses.length} denemede buldun!`
                 : `Doğru kelime: ${targetWord}`}
             </p>
+
             <div className="flex gap-3 mt-3 justify-center">
+              {/* Yeniden Oyna butonu */}
               <button
                 onClick={fetchWord}
-                className="px-6 py-2 rounded-xl gradient-bg text-white text-sm font-semibold transition-all hover:scale-[1.02]">
-                Yeniden Oyna 🔄
+                style={{
+                  background: btn1Img
+                    ? `url(${btn1Img}) center/cover no-repeat`
+                    : 'linear-gradient(135deg, #09637E, #0a8aaa)',
+                  minWidth: '130px',
+                  minHeight: '48px',
+                }}
+                className="px-6 py-2 rounded-xl text-white text-sm font-semibold transition-all hover:scale-[1.02] active:scale-95 shadow-md relative overflow-hidden">
+                <span style={{ color: 'black', textShadow: '0 2px 8px rgba(0,0,0,0.9), 0 0 20px rgba(0,0,0,0.7)' }}>
+                  Yeniden oyna 
+                </span>
+                
               </button>
+
+              {/* Menüye Dön butonu */}
               <button
                 onClick={() => navigate('/dashboard')}
-                className="px-6 py-2 rounded-xl border border-border text-sm font-medium text-muted-foreground hover:text-foreground transition-all">
-                Görev başarili asker üsse dön o7.
+                style={{
+                  background: btn2Img
+                    ? `url(${btn2Img}) center/cover no-repeat`
+                    : 'linear-gradient(135deg, #c084b0, #DDAED3)',
+                  minWidth: '130px',
+                  minHeight: '48px',
+                }}
+                className="px-6 py-2 rounded-xl text-sm font-semibold transition-all hover:scale-[1.02] active:scale-95 shadow-md relative overflow-hidden">
+                <span style={{ color: 'white', textShadow: '0 2px 8px rgba(0,0,0,0.9), 0 0 20px rgba(0,0,0,0.7)' }}>
+                  Görev başarılı asker üsse geri dön o7!
+                </span>
+                
               </button>
             </div>
           </div>
