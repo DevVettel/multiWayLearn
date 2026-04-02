@@ -46,8 +46,8 @@ export default function Wordle() {
   const [wordInfo, setWordInfo] = useState(null);
   const [letterStates, setLetterStates] = useState({});
   const [targetWord, setTargetWord] = useState('');
-  const [btn1Img, setBtn1Img] = useState(() => localStorage.getItem('wordle-btn1-img') || '/resim1.jpg.jpg');
-  const [btn2Img, setBtn2Img] = useState(() => localStorage.getItem('wordle-btn2-img') || '/resim2.jpg.avif');
+  const [btn1Img, setBtn1Img] = useState(() => localStorage.getItem('wordle-btn1-img') || '/img_1.jpg');
+  const [btn2Img, setBtn2Img] = useState(() => localStorage.getItem('wordle-btn2-img') || '/img_2.jpg');
   const MAX_GUESSES = 6;
   const WORD_LENGTH = 5;
 
