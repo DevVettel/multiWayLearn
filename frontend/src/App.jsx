@@ -22,6 +22,7 @@ import Quiz from './pages/Quiz';
 import Settings from './pages/Settings';
 import Analysis from './pages/Analysis';
 import Wordle from './pages/Wordle';
+import WordChain from './pages/WordChain';
 
 function PrivateRoute({ children }) {
   const token = localStorage.getItem('token');
@@ -50,7 +51,10 @@ export default function App() {
           <PrivateRoute><Analysis /></PrivateRoute>
         } />
         <Route path="/wordle" element={
-          <PrivateRoute><Wordle /></PrivateRoute>
+          <PrivateRoute><Wordle /></PrivateRoute>
+        } />
+        <Route path="/wordchain" element={
+          <PrivateRoute><WordChain /></PrivateRoute>
         } />
       </Routes>
     </BrowserRouter>

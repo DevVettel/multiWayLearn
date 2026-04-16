@@ -10,6 +10,7 @@ const quizRoutes = require('./routes/quiz');
 const settingsRoutes = require('./routes/settings');
 const analysisRoutes = require('./routes/analysis');
 const wordleRoutes = require('./routes/wordle');
+const wordchainRoutes = require('./routes/wordchain');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -27,6 +28,7 @@ app.use('/api/quiz', quizRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/analysis', analysisRoutes);
 app.use('/api/wordle', wordleRoutes);
+app.use('/api/wordchain', wordchainRoutes);
 
 app.get('/', (req, res) => {
   res.json({ message: 'MultiWayLearn API çalışıyor!' });

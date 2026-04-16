@@ -35,6 +35,15 @@ db.exec(`
     WordID INTEGER REFERENCES Words(WordID),
     Sample TEXT
   );
+  
+  CREATE TABLE IF NOT EXISTS WordChainStories (
+    StoryID INTEGER PRIMARY KEY AUTOINCREMENT,
+    UserID INTEGER,
+    Words TEXT,
+    Story TEXT,
+    ImagePath TEXT,
+    CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
 
   CREATE TABLE IF NOT EXISTS UserWordProgress (
     ProgressID INTEGER PRIMARY KEY AUTOINCREMENT,
