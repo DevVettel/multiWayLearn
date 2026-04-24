@@ -11,8 +11,8 @@ const Replicate = require('replicate');
 const replicate = new Replicate({ auth: process.env.REPLICATE_API_TOKEN });
 
 // Gemini API
-// const { GoogleGenerativeAI } = require('@google/generative-ai');
-// const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // Zincir kuralı kontrolü
 function isValidChain(words) {
@@ -128,6 +128,23 @@ router.get('/stories', authMiddleware, (req, res) => {
     }));
 
     res.json(parsed);
+});
+
+// Tüm sistem kelimelerini getir (seviyeye göre)
+router.get('/words', authMiddleware, (req, res) => {
+  const level = req.query.level || 'A1';
+  const validLevels = ['A1', 'A2', 'B1'];
+  if (!validLevels.includes(level)) {
+    return res.status(400).json({ error: 'Geçersiz seviye' });
+  }
+
+  const words = db.prepare(`
+    SELECT EngWordName, TurWordName FROM SystemWords
+    WHERE Level = ?
+    ORDER BY SystemWordID ASC
+  `).all(level);
+
+  res.json(words);
 });
 
 module.exports = router;

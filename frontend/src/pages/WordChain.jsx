@@ -30,12 +30,11 @@ export default function WordChain() {
             const activeLevels = JSON.parse(localStorage.getItem('activeLevels') || '["A1"]');
             const allWords = [];
             for (const level of activeLevels) {
-                const res = await API.get(`/levels/words/${level}`);
+                const res = await API.get(`/wordchain/words?level=${level}`);
                 allWords.push(...res.data);
             }
-            // Her açılışta karıştır
             const shuffled = allWords.sort(() => Math.random() - 0.5);
-            setAvailableWords(shuffled.slice(0, 80));
+            setAvailableWords(shuffled);
         } catch {
             setError('Kelimeler yüklenemedi');
         }
@@ -120,16 +119,16 @@ export default function WordChain() {
                     <button
                         onClick={() => setTab('create')}
                         className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${tab === 'create'
-                                ? 'gradient-bg text-white'
-                                : 'border border-border text-muted-foreground hover:text-foreground'
+                            ? 'gradient-bg text-white'
+                            : 'border border-border text-muted-foreground hover:text-foreground'
                             }`}>
                         ✨ Oluştur
                     </button>
                     <button
                         onClick={() => setTab('history')}
                         className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${tab === 'history'
-                                ? 'gradient-bg text-white'
-                                : 'border border-border text-muted-foreground hover:text-foreground'
+                            ? 'gradient-bg text-white'
+                            : 'border border-border text-muted-foreground hover:text-foreground'
                             }`}>
                         📚 Hikayelerim ({stories.length})
                     </button>
@@ -233,28 +232,66 @@ export default function WordChain() {
                         <div>
                             <p className="text-xs text-muted-foreground mb-3 font-medium">KELİMELER</p>
                             <div className="flex flex-wrap gap-2">
-                                {availableWords.map((word, i) => {
-                                    const eng = word.EngWordName;
-                                    const valid = isValidNext(eng);
-                                    const selected = selectedWords.includes(eng);
-                                    return (
-                                        <button
-                                            key={i}
-                                            onClick={() => addWord(eng)}
-                                            disabled={selected || (!valid && selectedWords.length > 0)}
-                                            className={`px-3 py-1.5 rounded-xl text-sm font-medium border transition-all ${selected
+                                {(() => {
+                                    // Zincire uygun kelimeleri öne al
+                                    const lastChar = selectedWords.length > 0
+                                        ? selectedWords[selectedWords.length - 1].slice(-1).toLowerCase()
+                                        : null;
+
+                                    const sorted = [...availableWords].sort((a, b) => {
+                                        const aMatch = lastChar && a.EngWordName[0].toLowerCase() === lastChar;
+                                        const bMatch = lastChar && b.EngWordName[0].toLowerCase() === lastChar;
+                                        if (aMatch && !bMatch) return -1;
+                                        if (!aMatch && bMatch) return 1;
+                                        return 0;
+                                    });
+
+                                    // Her harften max 4, ama zincire uyanlarda limit yok
+                                    const letterCount = {};
+                                    const nonMatchFiltered = availableWords.filter(word => {
+                                        const letter = word.EngWordName[0].toLowerCase();
+                                        const isMatch = lastChar && letter === lastChar;
+                                        if (isMatch) return false; // bunları ayrı alacağız
+                                        if (!letterCount[letter]) letterCount[letter] = 0;
+                                        if (letterCount[letter] >= 4) return false;
+                                        letterCount[letter]++;
+                                        return true;
+                                    });
+
+                                    const matchWords = lastChar
+                                        ? availableWords.filter(w => w.EngWordName[0].toLowerCase() === lastChar)
+                                        : [];
+
+                                    const filtered = [...matchWords, ...nonMatchFiltered];
+
+
+                                    return filtered.map((word, i) => {
+                                        const eng = word.EngWordName;
+                                        const valid = isValidNext(eng);
+                                        const selected = selectedWords.includes(eng);
+                                        const isNextMatch = lastChar && eng[0].toLowerCase() === lastChar;
+
+                                        return (
+                                            <button
+                                                key={i}
+                                                onClick={() => addWord(eng)}
+                                                disabled={selected || (!valid && selectedWords.length > 0)}
+                                                className={`px-3 py-1.5 rounded-xl text-sm font-medium border transition-all ${selected
                                                     ? 'bg-primary/20 border-primary/30 text-primary/50 cursor-default'
-                                                    : valid || selectedWords.length === 0
-                                                        ? 'border-border hover:border-primary/50 hover:bg-primary/5 text-foreground cursor-pointer'
-                                                        : 'border-border/30 text-muted-foreground/30 cursor-not-allowed'
-                                                }`}>
-                                            {eng}
-                                            {valid && !selected && selectedWords.length > 0 && (
-                                                <Plus className="w-3 h-3 inline ml-1" />
-                                            )}
-                                        </button>
-                                    );
-                                })}
+                                                    : isNextMatch
+                                                        ? 'border-primary bg-primary/10 text-primary cursor-pointer hover:bg-primary/20'
+                                                        : valid || selectedWords.length === 0
+                                                            ? 'border-border hover:border-primary/50 hover:bg-primary/5 text-foreground cursor-pointer'
+                                                            : 'border-border/30 text-muted-foreground/30 cursor-not-allowed'
+                                                    }`}>
+                                                {eng}
+                                                {isNextMatch && !selected && (
+                                                    <Plus className="w-3 h-3 inline ml-1" />
+                                                )}
+                                            </button>
+                                        );
+                                    });
+                                })()}
                             </div>
                         </div>
                     </div>
