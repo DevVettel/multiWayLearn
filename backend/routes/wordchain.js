@@ -5,9 +5,14 @@ const authMiddleware = require('../middleware/auth');
 const path = require('path');
 const fs = require('fs');
 
+
+// Replicate API
+const Replicate = require('replicate');
+const replicate = new Replicate({ auth: process.env.REPLICATE_API_TOKEN });
+
 // Gemini API
-const { GoogleGenerativeAI } = require('@google/generative-ai');
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+// const { GoogleGenerativeAI } = require('@google/generative-ai');
+// const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // Zincir kuralı kontrolü
 function isValidChain(words) {
@@ -51,26 +56,39 @@ Words: ${wordList}
         const storyResult = await storyModel.generateContent(storyPrompt);
         const story = storyResult.response.text().trim();
 
-        // 2. Gemini ile görsel üret
+        // 2. Replicate ile görsel üret
         let imagePath = null;
         try {
-            const imageModel = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-image' });
-            const imagePrompt = `A simple colorful cartoon illustration for a story about: ${wordList}.`;
-
-            const imageResult = await imageModel.generateContent({
-                contents: [{ role: 'user', parts: [{ text: imagePrompt }] }],
-                generationConfig: { responseModalities: ['TEXT', 'IMAGE'] },
-            });
-
-            for (const part of imageResult.response.candidates[0].content.parts) {
-                if (part.inlineData) {
-                    const fileName = `story_${userID}_${Date.now()}.png`;
-                    const filePath = path.join(__dirname, '../uploads', fileName);
-                    fs.writeFileSync(filePath, Buffer.from(part.inlineData.data, 'base64'));
-                    imagePath = `/uploads/${fileName}`;
-                    break;
+            const output = await replicate.run(
+                "stability-ai/stable-diffusion-3.5-medium",
+                {
+                    input: {
+                        prompt: `A simple colorful cartoon illustration for a story about: ${wordList}. Child-friendly, bright colors.`,
+                        width: 512,
+                        height: 512,
+                    }
                 }
-            }
+            );
+
+            // output URL olarak geliyor, indir ve kaydet
+            const imageUrl = Array.isArray(output) ? output[0] : output;
+            const https = require('https');
+            const http = require('http');
+            const protocol = imageUrl.startsWith('https') ? https : http;
+
+            await new Promise((resolve, reject) => {
+                const fileName = `story_${userID}_${Date.now()}.png`;
+                const filePath = require('path').join(__dirname, '../uploads', fileName);
+                const file = require('fs').createWriteStream(filePath);
+                protocol.get(imageUrl, (response) => {
+                    response.pipe(file);
+                    file.on('finish', () => {
+                        file.close();
+                        imagePath = `/uploads/${fileName}`;
+                        resolve();
+                    });
+                }).on('error', reject);
+            });
         } catch (imgErr) {
             console.log('Görsel üretilemedi:', imgErr.message);
         }
