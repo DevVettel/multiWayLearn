@@ -30,4 +30,4 @@ dist-ssr
 .env
 
 # Database files
-*.db
+*.db".claude/" 
