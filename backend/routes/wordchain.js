@@ -4,6 +4,7 @@ const db = require('../database/db');
 const authMiddleware = require('../middleware/auth');
 const path = require('path');
 const fs = require('fs');
+const https = require('https');
 
 
 // Replicate API
@@ -72,15 +73,16 @@ Words: ${wordList}
 
             // output URL olarak geliyor, indir ve kaydet
             const imageUrl = Array.isArray(output) ? output[0] : output;
-            const https = require('https');
-            const http = require('http');
-            const protocol = imageUrl.startsWith('https') ? https : http;
+
+            if (!imageUrl.startsWith('https://')) {
+                throw new Error('Güvensiz URL');
+            }
 
             await new Promise((resolve, reject) => {
                 const fileName = `story_${userID}_${Date.now()}.png`;
-                const filePath = require('path').join(__dirname, '../uploads', fileName);
-                const file = require('fs').createWriteStream(filePath);
-                protocol.get(imageUrl, (response) => {
+                const filePath = path.join(__dirname, '../uploads', fileName);
+                const file = fs.createWriteStream(filePath);
+                https.get(imageUrl, (response) => {
                     response.pipe(file);
                     file.on('finish', () => {
                         file.close();

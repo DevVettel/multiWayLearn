@@ -317,7 +317,7 @@ export default function WordChain() {
                                     <p className="text-sm leading-relaxed">{s.Story}</p>
                                     {s.ImagePath && (
                                         <img
-                                            src={`http://localhost:3001${s.ImagePath}`}
+                                            src={`http://localhost:3001${s.ImagePath.replace(/[^a-zA-Z0-9/_.-]/g, '')}`}
                                             alt="Story"
                                             className="w-full rounded-xl object-cover aspect-square"
                                         />

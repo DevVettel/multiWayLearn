@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const path = require('path');
+const rateLimit = require('express-rate-limit');
 const authRoutes = require('./routes/auth');
 const wordRoutes = require('./routes/words');
 const levelRoutes = require('./routes/levels');
@@ -18,6 +19,18 @@ const PORT = process.env.PORT || 3001;
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(cors());
 app.use(express.json());
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+});
+app.use('/api/', limiter);
+
+const generateLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 5,
+});
+app.use('/api/wordchain/generate', generateLimiter);
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 

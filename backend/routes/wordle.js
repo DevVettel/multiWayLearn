@@ -64,16 +64,16 @@ router.get('/word', authMiddleware, (req, res) => {
 router.post('/guess', authMiddleware, (req, res) => {
   const { guess, target } = req.body;
 
-  if (!guess || guess.length !== 5) {
+  if (!guess || typeof guess !== 'string' || guess.length !== 5) {
     return res.status(400).json({ error: 'Tahmin 5 harf olmalı' });
   }
 
-  if (!target || target.length !== 5) {
+  if (!target || typeof target !== 'string' || target.length !== 5) {
     return res.status(400).json({ error: 'Hedef kelime eksik' });
   }
 
-  const guessUpper = guess.toUpperCase();
-  const targetUpper = target.toUpperCase();
+  const guessUpper = String(guess).toUpperCase();
+  const targetUpper = String(target).toUpperCase();
 
   // Wordle algoritması
   const result = Array(5).fill('absent');
