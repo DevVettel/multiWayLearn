@@ -34,3 +34,4 @@ dist-ssr
 
 # Claude settings
 .claude/
+"backend/uploads/" 
