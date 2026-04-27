@@ -1,10 +1,17 @@
 const express = require('express');
 const router = express.Router();
+const rateLimit = require('express-rate-limit');
 const db = require('../database/db');
 const authMiddleware = require('../middleware/auth');
 const path = require('path');
 const fs = require('fs');
 const https = require('https');
+
+const generateLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 5,
+    message: { error: 'Çok fazla istek, lütfen bekleyin' }
+});
 
 
 // Replicate API
@@ -26,7 +33,7 @@ function isValidChain(words) {
 }
 
 // Hikaye oluştur
-router.post('/generate', authMiddleware, async (req, res) => {
+router.post('/generate', authMiddleware, generateLimiter, async (req, res) => {
     const userID = req.user.userID;
     const { words } = req.body;
 
@@ -74,15 +81,24 @@ Words: ${wordList}
             // output URL olarak geliyor, indir ve kaydet
             const imageUrl = Array.isArray(output) ? output[0] : output;
 
-            if (!imageUrl.startsWith('https://')) {
-                throw new Error('Güvensiz URL');
+            // SSRF koruması — sadece Replicate domain'ine izin ver
+            const allowedDomains = ['replicate.delivery', 'pbxt.replicate.delivery', 'storage.googleapis.com'];
+            let parsedUrl;
+            try {
+                parsedUrl = new URL(imageUrl);
+            } catch {
+                throw new Error('Geçersiz görsel URL');
+            }
+
+            if (!allowedDomains.some(d => parsedUrl.hostname.endsWith(d))) {
+                throw new Error('Güvensiz görsel kaynağı');
             }
 
             await new Promise((resolve, reject) => {
                 const fileName = `story_${userID}_${Date.now()}.png`;
                 const filePath = path.join(__dirname, '../uploads', fileName);
                 const file = fs.createWriteStream(filePath);
-                https.get(imageUrl, (response) => {
+                https.get(parsedUrl.toString(), (response) => {
                     response.pipe(file);
                     file.on('finish', () => {
                         file.close();

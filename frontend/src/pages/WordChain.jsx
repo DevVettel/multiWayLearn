@@ -3,6 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, X, Sparkles, BookOpen } from 'lucide-react';
 import axios from 'axios';
 
+const getSafeImageUrl = (imagePath) => {
+    if (!imagePath) return null;
+    if (!/^\/uploads\/story_\d+_\d+\.png$/.test(imagePath)) return null;
+    return `http://localhost:3001${imagePath}`;
+};
+
 const API = axios.create({ baseURL: 'http://localhost:3001/api' });
 API.interceptors.request.use((config) => {
     const token = localStorage.getItem('token');
@@ -213,9 +219,9 @@ export default function WordChain() {
                                     ))}
                                 </div>
                                 <p className="text-sm leading-relaxed text-foreground">{result.story}</p>
-                                {result.imagePath && (
+                                {getSafeImageUrl(result.imagePath) && (
                                     <img
-                                        src={`http://localhost:3001${result.imagePath}`}
+                                        src={getSafeImageUrl(result.imagePath)}
                                         alt="Story illustration"
                                         className="w-full rounded-xl object-cover aspect-square"
                                     />
@@ -315,9 +321,9 @@ export default function WordChain() {
                                         ))}
                                     </div>
                                     <p className="text-sm leading-relaxed">{s.Story}</p>
-                                    {s.ImagePath && (
+                                    {getSafeImageUrl(s.ImagePath) && (
                                         <img
-                                            src={`http://localhost:3001${s.ImagePath.replace(/[^a-zA-Z0-9/_.-]/g, '')}`}
+                                            src={getSafeImageUrl(s.ImagePath)}
                                             alt="Story"
                                             className="w-full rounded-xl object-cover aspect-square"
                                         />

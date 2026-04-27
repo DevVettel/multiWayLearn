@@ -31,3 +31,4 @@ dist-ssr
 
 # Database files
 *.db".claude/" 
+".claude/" 
