@@ -22,6 +22,50 @@ const replicate = new Replicate({ auth: process.env.REPLICATE_API_TOKEN });
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
+// Hikayeyi token'lara ayır
+function parseStoryTokens(story, words) {
+    const tokens = [];
+    let remaining = story;
+
+    while (remaining.length > 0) {
+        let matched = false;
+
+        for (let i = 0; i < words.length; i++) {
+            const word = words[i];
+            const regex = new RegExp(`^(${word})`, 'i');
+            const match = remaining.match(regex);
+
+            if (match) {
+                tokens.push({
+                    type: 'chain-word',
+                    text: match[1],
+                    lastChar: word.slice(-1).toUpperCase(),
+                    nextFirstChar: words[i + 1] ? words[i + 1][0].toUpperCase() : null,
+                    isFirst: i === 0,
+                });
+                remaining = remaining.slice(match[1].length);
+                matched = true;
+                break;
+            }
+        }
+
+        if (!matched) {
+            const nextWordPos = words.reduce((min, w) => {
+                const idx = remaining.toLowerCase().indexOf(w.toLowerCase());
+                return idx !== -1 && idx < min ? idx : min;
+            }, remaining.length);
+
+            tokens.push({
+                type: 'text',
+                text: remaining.slice(0, nextWordPos || 1),
+            });
+            remaining = remaining.slice(nextWordPos || 1);
+        }
+    }
+
+    return tokens;
+}
+
 // Zincir kuralı kontrolü
 function isValidChain(words) {
     for (let i = 0; i < words.length - 1; i++) {
@@ -35,7 +79,7 @@ function isValidChain(words) {
 // Hikaye oluştur
 router.post('/generate', authMiddleware, generateLimiter, async (req, res) => {
     const userID = req.user.userID;
-    const { words } = req.body;
+    const { words, generateImage } = req.body;
 
     if (!words || !Array.isArray(words) || words.length < 2) {
         return res.status(400).json({ error: 'En az 2 kelime gerekli' });
@@ -47,26 +91,25 @@ router.post('/generate', authMiddleware, generateLimiter, async (req, res) => {
 
     try {
         // 1. Gemini ile hikaye üret
-        const storyModel = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+        const storyModel = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-lite' });
         const wordList = words.join(', ');
 
         const storyPrompt = `
-You are a creative writer. Write a short story (3-4 sentences) in English.
+Write a short, creative and meaningful story (2-3 sentences) in English.
+Use these words naturally in this exact order: ${wordList}
 STRICT RULES:
-1. Use these words IN THIS EXACT ORDER: ${words.map((w, i) => `${i + 1}. ${w}`).join(', ')}
-2. The last letter of each word must connect to the first letter of the next word in the story flow
-3. Bold each chain word using **word** markdown
-4. Only return the story text, nothing else, no explanations
-
-Words: ${wordList}
+1. Never repeat a word from the list
+2. The story must make logical sense
+3. Do not mention the chain connection explicitly
+4. Only return the story text, nothing else
 `;
 
         const storyResult = await storyModel.generateContent(storyPrompt);
-        const story = storyResult.response.text().trim();
+        const story = storyResult.response.text().trim().replace(/\*\*/g, '');
 
-        // 2. Replicate ile görsel üret
+        // 2. Replicate ile görsel üret (opsiyonel)
         let imagePath = null;
-        try {
+        if (generateImage === true) try {
             const output = await replicate.run(
                 "stability-ai/stable-diffusion-3.5-medium",
                 {
@@ -117,10 +160,14 @@ Words: ${wordList}
     `);
         const result = stmt.run(userID, JSON.stringify(words), story, imagePath);
 
+        const storyTokens = parseStoryTokens(story, words);
+        console.log('storyTokens:', JSON.stringify(storyTokens, null, 2));
+
         res.json({
             storyID: result.lastInsertRowid,
             words,
             story,
+            storyTokens,
             imagePath,
         });
 
@@ -140,10 +187,14 @@ router.get('/stories', authMiddleware, (req, res) => {
     LIMIT 20
   `).all(userID);
 
-    const parsed = stories.map(s => ({
-        ...s,
-        words: JSON.parse(s.Words),
-    }));
+    const parsed = stories.map(s => {
+        const words = JSON.parse(s.Words);
+        return {
+            ...s,
+            words,
+            storyTokens: parseStoryTokens(s.Story, words),
+        };
+    });
 
     res.json(parsed);
 });

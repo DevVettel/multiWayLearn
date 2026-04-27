@@ -3,6 +3,40 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, X, Sparkles, BookOpen } from 'lucide-react';
 import axios from 'axios';
 
+const StoryWithChain = ({ storyTokens, story }) => {
+    if (!storyTokens || !storyTokens.length) {
+        return <p className="text-sm leading-relaxed">{story}</p>;
+    }
+
+    return (
+        <p className="text-sm leading-relaxed">
+            {storyTokens.map((token, i) => {
+                if (token.type === 'text') {
+                    return <span key={i}>{token.text}</span>;
+                }
+
+                const word = token.text;
+                const firstEmerald = !token.isFirst;
+                const lastAmber = !!token.nextFirstChar;
+                return (
+                    <span key={i}>
+                        {firstEmerald
+                            ? <span className="text-emerald-400 font-black">{word[0]}</span>
+                            : <span>{word[0]}</span>
+                        }
+                        {word.length > 2 && <span>{word.slice(1, -1)}</span>}
+                        {word.length > 1 && (
+                            lastAmber
+                                ? <span className="text-amber-400 font-black">{word.slice(-1)}</span>
+                                : <span>{word.slice(-1)}</span>
+                        )}
+                    </span>
+                );
+            })}
+        </p>
+    );
+};
+
 const getSafeImageUrl = (imagePath) => {
     if (!imagePath) return null;
     if (!/^\/uploads\/story_\d+_\d+\.png$/.test(imagePath)) return null;
@@ -24,6 +58,7 @@ export default function WordChain() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [result, setResult] = useState(null);
+    const [generateImage, setGenerateImage] = useState(false);
     const [tab, setTab] = useState('create'); // 'create' | 'history'
 
     useEffect(() => {
@@ -91,7 +126,7 @@ export default function WordChain() {
         setError('');
         setResult(null);
         try {
-            const res = await API.post('/wordchain/generate', { words: selectedWords });
+            const res = await API.post('/wordchain/generate', { words: selectedWords, generateImage });
             setResult(res.data);
             setSelectedWords([]);
             fetchStories();
@@ -186,23 +221,35 @@ export default function WordChain() {
                             </div>
                         )}
 
-                        {/* Üret butonu */}
-                        <button
-                            onClick={handleGenerate}
-                            disabled={loading || selectedWords.length < 2}
-                            className="w-full py-3 rounded-xl gradient-bg text-white font-semibold flex items-center justify-center gap-2 transition-all hover:scale-[1.02] disabled:opacity-50 disabled:scale-100">
-                            {loading ? (
-                                <>
-                                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                    Hikaye oluşturuluyor...
-                                </>
-                            ) : (
-                                <>
-                                    <Sparkles className="w-4 h-4" />
-                                    Hikaye Oluştur
-                                </>
-                            )}
-                        </button>
+                        {/* Üret butonu + görsel toggle */}
+                        <div className="flex items-center gap-3">
+                            <button
+                                onClick={handleGenerate}
+                                disabled={loading || selectedWords.length < 2}
+                                className="flex-1 py-3 rounded-xl gradient-bg text-white font-semibold flex items-center justify-center gap-2 transition-all hover:scale-[1.02] disabled:opacity-50 disabled:scale-100">
+                                {loading ? (
+                                    <>
+                                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                        {generateImage ? 'Oluşturuluyor...' : 'Hikaye oluşturuluyor...'}
+                                    </>
+                                ) : (
+                                    <>
+                                        <Sparkles className="w-4 h-4" />
+                                        Hikaye Oluştur
+                                    </>
+                                )}
+                            </button>
+                            <button
+                                onClick={() => setGenerateImage(v => !v)}
+                                className={`px-3 py-3 rounded-xl border text-sm font-medium transition-all flex items-center gap-1.5 ${
+                                    generateImage
+                                        ? 'border-primary bg-primary/10 text-primary'
+                                        : 'border-border text-muted-foreground hover:border-primary/50'
+                                }`}>
+                                🖼️
+                                <span className="text-xs">{generateImage ? 'Görsel Açık' : 'Görsel'}</span>
+                            </button>
+                        </div>
 
                         {/* Sonuç */}
                         {result && (
@@ -218,7 +265,7 @@ export default function WordChain() {
                                         </span>
                                     ))}
                                 </div>
-                                <p className="text-sm leading-relaxed text-foreground">{result.story}</p>
+                                <StoryWithChain storyTokens={result.storyTokens} story={result.story} />
                                 {getSafeImageUrl(result.imagePath) && (
                                     <img
                                         src={getSafeImageUrl(result.imagePath)}
@@ -320,7 +367,7 @@ export default function WordChain() {
                                             </span>
                                         ))}
                                     </div>
-                                    <p className="text-sm leading-relaxed">{s.Story}</p>
+                                    <StoryWithChain storyTokens={s.storyTokens} story={s.Story} />
                                     {getSafeImageUrl(s.ImagePath) && (
                                         <img
                                             src={getSafeImageUrl(s.ImagePath)}

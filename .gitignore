@@ -30,5 +30,7 @@ dist-ssr
 .env
 
 # Database files
-*.db".claude/" 
-".claude/" 
+*.db
+
+# Claude settings
+.claude/
