@@ -2,12 +2,19 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Trophy, Target, TrendingUp, BookOpen, Printer } from 'lucide-react';
 import { getAnalysis } from '../services/api';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 const levelColors = {
   A1: { bar: 'from-emerald-500 to-teal-500', badge: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' },
-  A2: { bar: 'from-blue-500 to-cyan-500', badge: 'bg-blue-500/10 text-blue-500 border-blue-500/20' },
-  B1: { bar: 'from-violet-500 to-purple-500', badge: 'bg-violet-500/10 text-violet-500 border-violet-500/20' },
+  A2: { bar: 'from-amber-500 to-yellow-500', badge: 'bg-amber-500/10 text-amber-500 border-amber-500/20' },
+  B1: { bar: 'from-blue-500 to-cyan-500', badge: 'bg-blue-500/10 text-blue-500 border-blue-500/20' },
 };
+
+const DONUT_COLORS = [
+  { label: 'Öğrenilen', color: '#10b981' },
+  { label: 'Devam Eden', color: '#f59e0b' },
+  { label: 'Başlanmamış', color: '#6b7280' },
+];
 
 const STREAK_LABELS = ['Yeni', '1. Gün', '1. Hafta', '1. Ay', '3. Ay', '6. Ay'];
 
@@ -56,6 +63,22 @@ export default function Analysis() {
   const maxActivity = Math.max(...last7Days.map(d => activityMap[d] || 0), 1);
   const systemTotalMap = Object.fromEntries(systemTotals.map(s => [s.Level, s.total]));
 
+  const systemTotalAll = systemTotals.reduce((sum, s) => sum + s.total, 0);
+  const learnedCount = general.totalLearned || 0;
+  const inProgressCount = Math.max(0, (general.totalInProgress || 0) - learnedCount);
+  const notStartedCount = Math.max(0, systemTotalAll - (general.totalInProgress || 0));
+  const learnedPercent = systemTotalAll > 0 ? Math.round((learnedCount / systemTotalAll) * 100) : 0;
+  const donutData = [
+    { name: 'Öğrenilen', value: learnedCount },
+    { name: 'Devam Eden', value: inProgressCount },
+    { name: 'Başlanmamış', value: notStartedCount },
+  ].filter(d => d.value > 0);
+  const donutLegend = [
+    { label: 'Öğrenilen', value: learnedCount, color: DONUT_COLORS[0].color },
+    { label: 'Devam Eden', value: inProgressCount, color: DONUT_COLORS[1].color },
+    { label: 'Başlanmamış', value: notStartedCount, color: DONUT_COLORS[2].color },
+  ];
+
   return (
     <div className="min-h-screen bg-background">
 
@@ -92,6 +115,74 @@ export default function Analysis() {
               <p className="text-xs text-muted-foreground mt-1">{stat.label}</p>
             </div>
           ))}
+        </div>
+
+        {/* Genel Durum Donut Chart */}
+        <div className="bg-card rounded-2xl border border-border p-6 shadow-card">
+          <h2 className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-5">
+            Genel Durum
+          </h2>
+          <div className="flex flex-col sm:flex-row items-center gap-8">
+            <div className="relative w-44 h-44 flex-shrink-0">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={donutData.length > 0 ? donutData : [{ name: 'Veri yok', value: 1 }]}
+                    cx="50%" cy="50%"
+                    innerRadius={52} outerRadius={76}
+                    dataKey="value"
+                    strokeWidth={0}
+                  >
+                    {(donutData.length > 0 ? donutData : [{ name: 'Veri yok', value: 1 }]).map((entry, index) => (
+                      <Cell
+                        key={index}
+                        fill={donutData.length > 0 ? DONUT_COLORS[['Öğrenilen','Devam Eden','Başlanmamış'].indexOf(entry.name)]?.color ?? '#6b7280' : '#6b7280'}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value, name) => [`${value} kelime`, name]}
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '12px',
+                      color: 'hsl(var(--foreground))',
+                      fontSize: '13px',
+                    }}
+                    itemStyle={{ color: 'hsl(var(--foreground))' }}
+                    cursor={false}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <span className="text-2xl font-bold text-foreground">%{learnedPercent}</span>
+                <span className="text-xs text-muted-foreground">tamamlandı</span>
+              </div>
+            </div>
+            <div className="flex flex-col gap-4 flex-1 w-full">
+              {donutLegend.map(item => (
+                <div key={item.label} className="flex items-center gap-3">
+                  <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }} />
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-sm text-foreground">{item.label}</span>
+                      <span className="text-sm font-semibold text-foreground">{item.value}</span>
+                    </div>
+                    <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-700"
+                        style={{
+                          width: systemTotalAll > 0 ? `${Math.round((item.value / systemTotalAll) * 100)}%` : '0%',
+                          backgroundColor: item.color,
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+              <p className="text-xs text-muted-foreground">Toplam hedef: {systemTotalAll} kelime</p>
+            </div>
+          </div>
         </div>
 
         {/* Seviye Bazlı Başarı */}
