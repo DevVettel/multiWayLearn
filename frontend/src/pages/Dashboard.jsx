@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import PropTypes from "prop-types";
 import { useNavigate } from "react-router-dom";
 import { getLevelProgress, getSettings } from "../services/api";
 import {
@@ -77,6 +78,20 @@ function LevelCard({ data, index, isActive, onToggle }) {
     </div>
   );
 }
+
+LevelCard.propTypes = {
+  data: PropTypes.shape({
+    level: PropTypes.string.isRequired,
+    learned: PropTypes.number.isRequired,
+    unlockThreshold: PropTypes.number.isRequired,
+    percentage: PropTypes.number.isRequired,
+    total: PropTypes.number.isRequired,
+    inProgress: PropTypes.number.isRequired,
+  }).isRequired,
+  index: PropTypes.number.isRequired,
+  isActive: PropTypes.bool.isRequired,
+  onToggle: PropTypes.func.isRequired,
+};
 
 function Dashboard() {
   const username = localStorage.getItem("username");

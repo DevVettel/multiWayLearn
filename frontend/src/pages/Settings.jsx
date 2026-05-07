@@ -21,7 +21,6 @@ export default function Settings() {
   }, []);
 
   const handleSave = async () => {
-    console.log('Kaydedilen değer:', dailyGoal, typeof dailyGoal);
     setLoading(true);
     setError('');
     setSuccess('');

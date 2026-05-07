@@ -3,9 +3,9 @@ const router = express.Router();
 const rateLimit = require('express-rate-limit');
 const db = require('../database/db');
 const authMiddleware = require('../middleware/auth');
-const path = require('path');
-const fs = require('fs');
-const https = require('https');
+const path = require('node:path');
+const fs = require('node:fs');
+const https = require('node:https');
 
 const generateLimiter = rateLimit({
     windowMs: 60 * 1000,
@@ -22,6 +22,10 @@ const replicate = new Replicate({ auth: process.env.REPLICATE_API_TOKEN });
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
+function escapeRegExp(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 // Hikayeyi token'lara ayır
 function parseStoryTokens(story, words) {
     const tokens = [];
@@ -32,7 +36,7 @@ function parseStoryTokens(story, words) {
 
         for (let i = 0; i < words.length; i++) {
             const word = words[i];
-            const regex = new RegExp(`^(${word})`, 'i');
+            const regex = new RegExp(`^(${escapeRegExp(word)})`, 'i');
             const match = remaining.match(regex);
 
             if (match) {
@@ -151,7 +155,7 @@ STRICT RULES:
                 }).on('error', reject);
             });
         } catch (imgErr) {
-            console.log('Görsel üretilemedi:', imgErr.message);
+            console.error('Görsel üretilemedi:', imgErr.message);
         }
         // 3. Veritabanına kaydet
         const stmt = db.prepare(`
@@ -161,7 +165,6 @@ STRICT RULES:
         const result = stmt.run(userID, JSON.stringify(words), story, imagePath);
 
         const storyTokens = parseStoryTokens(story, words);
-        console.log('storyTokens:', JSON.stringify(storyTokens, null, 2));
 
         res.json({
             storyID: result.lastInsertRowid,
@@ -173,7 +176,7 @@ STRICT RULES:
 
     } catch (err) {
         console.error('WordChain hata:', err);
-        res.status(500).json({ error: 'Hikaye oluşturulamadı: ' + err.message });
+        res.status(500).json({ error: 'Hikaye oluşturulamadı' });
     }
 });
 

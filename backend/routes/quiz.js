@@ -5,6 +5,29 @@ const authMiddleware = require('../middleware/auth');
 
 const REVIEW_INTERVALS = [1, 7, 30, 90, 180, 365];
 
+function computeNextReview(correct, newStreak, isLearned) {
+  const now = Date.now();
+  let ms;
+  if (isLearned) {
+    ms = 365 * 24 * 60 * 60 * 1000;
+  } else if (correct && newStreak > 0) {
+    const days = REVIEW_INTERVALS[newStreak - 1] || 1;
+    ms = days * 24 * 60 * 60 * 1000;
+  } else {
+    ms = 3 * 60 * 1000;
+  }
+  return new Date(now + ms).toISOString().slice(0, 19).replace('T', ' ');
+}
+
+function getTodayCount(userID) {
+  return db.prepare(`
+    SELECT COUNT(DISTINCT SystemWordID) as count FROM UserWordProgress
+    WHERE UserID = ?
+    AND date(LastSeen) = date('now')
+    AND LastSeen IS NOT NULL
+  `).get(userID).count;
+}
+
 function getUnlockedLevels(userID) {
   const unlocked = ['A1'];
   const a1Learned = db.prepare(`
@@ -32,20 +55,15 @@ router.get('/next', authMiddleware, (req, res) => {
   const user = db.prepare('SELECT DailyWordCount FROM Users WHERE UserID = ?').get(userID);
   const dailyGoal = user?.DailyWordCount || 10;
 
-  const todayCount = db.prepare(`
-  SELECT COUNT(DISTINCT SystemWordID) as count FROM UserWordProgress
-  WHERE UserID = ?
-  AND date(LastSeen) = date('now')
-  AND LastSeen IS NOT NULL
-`).get(userID).count;
+  const todayCount = getTodayCount(userID);
 
   if (todayCount >= dailyGoal) {
     return res.json({ finished: true, reason: 'daily_goal', dailyGoal, todayCount });
   }
 
-  const validLevels = ['A1', 'A2', 'B1'];
+  const validLevels = new Set(['A1', 'A2', 'B1']);
   const requestedLevels = (typeof req.query.levels === 'string' && req.query.levels)
-    ? req.query.levels.split(',').filter(l => validLevels.includes(l))
+    ? req.query.levels.split(',').filter(l => validLevels.has(l))
     : null;
 
   const unlockedLevels = (requestedLevels && requestedLevels.length > 0)
@@ -146,15 +164,7 @@ router.post('/answer', authMiddleware, (req, res) => {
   let newStreak = correct ? progress.CorrectStreak + 1 : 0;
   const isLearned = newStreak >= 6 ? 1 : 0;
 
-  let nextReviewExpr;
-  if (isLearned) {
-    nextReviewExpr = `datetime('now', '+365 days')`;
-  } else if (correct && newStreak > 0) {
-    const days = REVIEW_INTERVALS[newStreak - 1] || 1;
-    nextReviewExpr = `datetime('now', '+${days} days')`;
-  } else {
-    nextReviewExpr = `datetime('now', '+3 minutes')`;
-  }
+  const nextReview = computeNextReview(correct, newStreak, isLearned);
 
   db.prepare(`
     UPDATE UserWordProgress SET
@@ -162,19 +172,23 @@ router.post('/answer', authMiddleware, (req, res) => {
       TotalCorrect = TotalCorrect + ?,
       TotalWrong = TotalWrong + ?,
       LastSeen = datetime('now'),
-      NextReview = ${nextReviewExpr},
+      NextReview = ?,
       IsLearned = ?
     WHERE UserID = ? AND SystemWordID = ?
-  `).run(newStreak, correct ? 1 : 0, correct ? 0 : 1, isLearned, userID, systemWordID);
+  `).run(newStreak, correct ? 1 : 0, correct ? 0 : 1, nextReview, isLearned, userID, systemWordID);
 
   const user = db.prepare('SELECT DailyWordCount FROM Users WHERE UserID = ?').get(userID);
   const dailyGoal = user?.DailyWordCount || 10;
-  const todayCount = db.prepare(`
-  SELECT COUNT(DISTINCT SystemWordID) as count FROM UserWordProgress
-  WHERE UserID = ?
-  AND date(LastSeen) = date('now')
-  AND LastSeen IS NOT NULL
-`).get(userID).count;
+  const todayCount = getTodayCount(userID);
+
+  let message;
+  if (isLearned) {
+    message = '🎉 Kelime öğrenildi!';
+  } else if (correct) {
+    message = `✓ Doğru! Seri: ${newStreak}/6`;
+  } else {
+    message = '✗ Yanlış, seri sıfırlandı';
+  }
 
   res.json({
     correct,
@@ -183,11 +197,7 @@ router.post('/answer', authMiddleware, (req, res) => {
     dailyGoal,
     todayCount,
     dailyGoalReached: todayCount >= dailyGoal,
-    message: isLearned
-      ? '🎉 Kelime öğrenildi!'
-      : correct
-        ? `✓ Doğru! Seri: ${newStreak}/6`
-        : '✗ Yanlış, seri sıfırlandı'
+    message,
   });
 });
 
@@ -197,12 +207,7 @@ router.get('/stats', authMiddleware, (req, res) => {
   const user = db.prepare('SELECT DailyWordCount FROM Users WHERE UserID = ?').get(userID);
   const dailyGoal = user?.DailyWordCount || 10;
 
-  const todayCount = db.prepare(`
-  SELECT COUNT(DISTINCT SystemWordID) as count FROM UserWordProgress
-  WHERE UserID = ?
-  AND date(LastSeen) = date('now')
-  AND LastSeen IS NOT NULL
-`).get(userID).count;
+  const todayCount = getTodayCount(userID);
 
   const stats = db.prepare(`
     SELECT

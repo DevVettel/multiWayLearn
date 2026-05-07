@@ -92,7 +92,7 @@ export default function Analysis() {
             </button>
             <h1 className="text-lg font-bold font-display">Analiz Raporu</h1>
           </div>
-          <button onClick={() => window.print()}
+          <button onClick={() => globalThis.print()}
             className="flex items-center gap-2 px-4 py-2 rounded-xl border border-border text-sm font-medium text-muted-foreground hover:text-foreground hover:border-primary/50 transition-all print:hidden">
             <Printer className="w-4 h-4" /> Yazdır
           </button>
@@ -133,9 +133,9 @@ export default function Analysis() {
                     dataKey="value"
                     strokeWidth={0}
                   >
-                    {(donutData.length > 0 ? donutData : [{ name: 'Veri yok', value: 1 }]).map((entry, index) => (
+                    {(donutData.length > 0 ? donutData : [{ name: 'Veri yok', value: 1 }]).map((entry) => (
                       <Cell
-                        key={index}
+                        key={entry.name}
                         fill={donutData.length > 0 ? DONUT_COLORS[['Öğrenilen','Devam Eden','Başlanmamış'].indexOf(entry.name)]?.color ?? '#6b7280' : '#6b7280'}
                       />
                     ))}
@@ -244,9 +244,9 @@ export default function Analysis() {
                   <p className="text-lg font-bold text-foreground">{count}</p>
                   <p className="text-xs text-muted-foreground mt-1">{STREAK_LABELS[streak]}</p>
                   <div className="flex justify-center gap-0.5 mt-2">
-                    {[1,2,3,4,5,6].map(i => (
-                      <div key={i}
-                        className={`w-1.5 h-1.5 rounded-full ${i <= streak ? 'bg-emerald-500' : 'bg-border'}`}
+                    {[1,2,3,4,5,6].map(dot => (
+                      <div key={dot}
+                        className={`w-1.5 h-1.5 rounded-full ${dot <= streak ? 'bg-emerald-500' : 'bg-border'}`}
                       />
                     ))}
                   </div>

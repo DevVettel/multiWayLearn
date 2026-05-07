@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-const path = require('path');
+const path = require('node:path');
 const rateLimit = require('express-rate-limit');
 const authRoutes = require('./routes/auth');
 const wordRoutes = require('./routes/words');
@@ -45,6 +45,29 @@ app.use('/api/wordchain', wordchainRoutes);
 
 app.get('/', (req, res) => {
   res.json({ message: 'MultiWayLearn API çalışıyor!' });
+});
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ error: 'Endpoint bulunamadi' });
+});
+
+// Merkezi hata yakalayıcı — tüm route'lardaki next(err) buraya düşer
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  console.error(`[ERROR] ${req.method} ${req.path}`, err);
+  const status = err.status || err.statusCode || 500;
+  res.status(status).json({ error: status === 500 ? 'Sunucu hatasi' : err.message });
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('[FATAL] Uncaught Exception:', err);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[FATAL] Unhandled Promise Rejection:', reason);
+  process.exit(1);
 });
 
 app.listen(PORT, '0.0.0.0', () => {

@@ -4,12 +4,26 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const db = require('../database/db');
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 // KAYIT OL
 router.post('/register', (req, res) => {
   const { username, email, password } = req.body;
 
   if (!username || !email || !password) {
     return res.status(400).json({ error: 'Tum alanlar zorunludur' });
+  }
+
+  if (typeof username !== 'string' || username.length < 3 || username.length > 50) {
+    return res.status(400).json({ error: 'Kullanici adi 3-50 karakter olmalidir' });
+  }
+
+  if (typeof email !== 'string' || !EMAIL_REGEX.test(email) || email.length > 255) {
+    return res.status(400).json({ error: 'Gecersiz email adresi' });
+  }
+
+  if (typeof password !== 'string' || password.length < 6 || password.length > 128) {
+    return res.status(400).json({ error: 'Sifre 6-128 karakter olmalidir' });
   }
 
   const hashedPassword = bcrypt.hashSync(password, 10);
@@ -20,7 +34,7 @@ router.post('/register', (req, res) => {
     );
     const result = stmt.run(username, email, hashedPassword);
     res.json({ message: 'Kayit basarili', userID: result.lastInsertRowid });
-  } catch (err) {
+  } catch {
     res.status(400).json({ error: 'Bu kullanici adi veya email zaten kayitli' });
   }
 });
@@ -31,6 +45,14 @@ router.post('/login', (req, res) => {
 
   if (!email || !password) {
     return res.status(400).json({ error: 'Email ve sifre zorunludur' });
+  }
+
+  if (typeof email !== 'string' || email.length > 255) {
+    return res.status(400).json({ error: 'Gecersiz email' });
+  }
+
+  if (typeof password !== 'string' || password.length > 128) {
+    return res.status(400).json({ error: 'Gecersiz sifre' });
   }
 
   const user = db.prepare('SELECT * FROM Users WHERE Email = ?').get(email);

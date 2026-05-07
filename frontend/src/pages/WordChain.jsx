@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, X, Sparkles, BookOpen } from 'lucide-react';
 import axios from 'axios';
@@ -12,14 +13,14 @@ const StoryWithChain = ({ storyTokens, story }) => {
         <p className="text-sm leading-relaxed">
             {storyTokens.map((token, i) => {
                 if (token.type === 'text') {
-                    return <span key={i}>{token.text}</span>;
+                    return <span key={`text-${i}`}>{token.text}</span>;
                 }
 
                 const word = token.text;
                 const firstEmerald = !token.isFirst;
                 const lastAmber = !!token.nextFirstChar;
                 return (
-                    <span key={i}>
+                    <span key={`chain-${i}`}>
                         {firstEmerald
                             ? <span className="text-emerald-400 font-black">{word[0]}</span>
                             : <span>{word[0]}</span>
@@ -35,6 +36,17 @@ const StoryWithChain = ({ storyTokens, story }) => {
             })}
         </p>
     );
+};
+
+StoryWithChain.propTypes = {
+    storyTokens: PropTypes.arrayOf(PropTypes.shape({
+        type: PropTypes.string.isRequired,
+        text: PropTypes.string.isRequired,
+        isFirst: PropTypes.bool,
+        lastChar: PropTypes.string,
+        nextFirstChar: PropTypes.string,
+    })),
+    story: PropTypes.string.isRequired,
 };
 
 const getSafeImageUrl = (imagePath) => {
@@ -259,8 +271,8 @@ export default function WordChain() {
                                     <p className="font-semibold text-sm">Hikayeniz oluşturuldu!</p>
                                 </div>
                                 <div className="flex flex-wrap gap-1">
-                                    {result.words.map((w, i) => (
-                                        <span key={i} className="px-2 py-0.5 rounded-lg bg-primary/10 text-primary text-xs font-medium">
+                                    {result.words.map((w) => (
+                                        <span key={w} className="px-2 py-0.5 rounded-lg bg-primary/10 text-primary text-xs font-medium">
                                             {w}
                                         </span>
                                     ))}
@@ -318,7 +330,7 @@ export default function WordChain() {
                                     const filtered = [...matchWords, ...nonMatchFiltered];
 
 
-                                    return filtered.map((word, i) => {
+                                    return filtered.map((word) => {
                                         const eng = word.EngWordName;
                                         const valid = isValidNext(eng);
                                         const selected = selectedWords.includes(eng);
@@ -326,7 +338,7 @@ export default function WordChain() {
 
                                         return (
                                             <button
-                                                key={i}
+                                                key={eng}
                                                 onClick={() => addWord(eng)}
                                                 disabled={selected || (!valid && selectedWords.length > 0)}
                                                 className={`px-3 py-1.5 rounded-xl text-sm font-medium border transition-all ${selected
@@ -361,8 +373,8 @@ export default function WordChain() {
                             stories.map((s) => (
                                 <div key={s.StoryID} className="p-5 rounded-2xl border border-border bg-card space-y-3">
                                     <div className="flex flex-wrap gap-1">
-                                        {s.words.map((w, i) => (
-                                            <span key={i} className="px-2 py-0.5 rounded-lg bg-primary/10 text-primary text-xs font-medium">
+                                        {s.words.map((w) => (
+                                            <span key={w} className="px-2 py-0.5 rounded-lg bg-primary/10 text-primary text-xs font-medium">
                                                 {w}
                                             </span>
                                         ))}

@@ -1,5 +1,5 @@
 const db = require('./database/db');       // bu satır tabloları oluşturur
-const path = require('path');
+const path = require('node:path');
 const ExcelJS = require('exceljs');
 
 async function seed() {

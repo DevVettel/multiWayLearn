@@ -15,6 +15,7 @@
 
 
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import PropTypes from 'prop-types';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Words from './pages/Words';
@@ -28,6 +29,10 @@ function PrivateRoute({ children }) {
   const token = localStorage.getItem('token');
   return token ? children : <Navigate to="/login" />;
 }
+
+PrivateRoute.propTypes = {
+  children: PropTypes.node.isRequired,
+};
 
 export default function App() {
   return (

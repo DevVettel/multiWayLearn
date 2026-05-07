@@ -14,15 +14,22 @@ API.interceptors.request.use((config) => {
 export const register = (data) => API.post('/auth/register', data);
 export const login = (data) => API.post('/auth/login', data);
 
+const VALID_LEVELS = new Set(['A1', 'A2', 'B1']);
+
 // Kelimeler
 export const getWords = () => API.get('/words');
 export const addWord = (data) => API.post('/words', data);
-export const deleteWord = (id) => API.delete(`/words/${id}`);
-
+export const deleteWord = (id) => {
+  if (!Number.isInteger(id) || id <= 0) throw new Error('Geçersiz kelime ID');
+  return API.delete(`/words/${id}`);
+};
 
 // Seviye sistemi
 export const getLevelProgress = () => API.get('/levels/progress');
-export const getLevelWords = (level) => API.get(`/levels/words/${level}`);
+export const getLevelWords = (level) => {
+  if (!VALID_LEVELS.has(level)) throw new Error('Geçersiz seviye');
+  return API.get(`/levels/words/${level}`);
+};
 
 // Ayarlar
 export const getSettings = () => API.get('/settings');
