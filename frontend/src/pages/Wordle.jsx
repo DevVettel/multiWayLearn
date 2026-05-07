@@ -46,8 +46,8 @@ export default function Wordle() {
   const [wordInfo, setWordInfo] = useState(null);
   const [letterStates, setLetterStates] = useState({});
   const [targetWord, setTargetWord] = useState('');
-  const [btn1Img, setBtn1Img] = useState(() => localStorage.getItem('wordle-btn1-img') || '/img_1.jpg');
-  const [btn2Img, setBtn2Img] = useState(() => localStorage.getItem('wordle-btn2-img') || '/img_2.jpg');
+  const btn1Img = localStorage.getItem('wordle-btn1-img') || '/img_1.jpg';
+  const btn2Img = localStorage.getItem('wordle-btn2-img') || '/img_2.jpg';
   const MAX_GUESSES = 6;
   const WORD_LENGTH = 5;
 
@@ -77,8 +77,8 @@ export default function Wordle() {
       else if (key === 'BACKSPACE') handleDelete();
       else if (/^[A-Z]$/.test(key)) handleLetter(key);
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    globalThis.addEventListener('keydown', handleKeyDown);
+    return () => globalThis.removeEventListener('keydown', handleKeyDown);
   }, [currentGuess, gameOver, targetWord]);
 
   const handleLetter = (letter) => {
@@ -240,9 +240,9 @@ export default function Wordle() {
         <div className="flex flex-col gap-2">
           {rows.map((row, rowIdx) => (
             <div
-              key={rowIdx}
+              key={`row-${rowIdx}`}
               className={`flex gap-2 ${row.type === 'current' && shake ? 'animate-bounce' : ''}`}>
-              {Array(WORD_LENGTH).fill(null).map((_, colIdx) => {
+              {new Array(WORD_LENGTH).fill(null).map((_, colIdx) => {
                 let letter = '';
                 let colorClass = TILE_COLORS.empty;
 
@@ -256,7 +256,7 @@ export default function Wordle() {
 
                 return (
                   <div
-                    key={colIdx}
+                    key={`col-${rowIdx}-${colIdx}`}
                     className={`w-14 h-14 border-2 rounded-2xl flex items-center justify-center text-xl font-bold font-display transition-all duration-300 ${colorClass}`}>
                     {letter}
                   </div>
@@ -270,7 +270,7 @@ export default function Wordle() {
       {/* Klavye */}
       <div className="pb-8 px-4 max-w-lg mx-auto w-full">
         {KEYBOARD_ROWS.map((row, i) => (
-          <div key={i} className="flex justify-center gap-1.5 mb-1.5">
+          <div key={`keyboard-row-${i}`} className="flex justify-center gap-1.5 mb-1.5">
             {row.map(key => {
               const isSpecial = key === 'ENTER' || key === 'DEL';
               const state = letterStates[key];

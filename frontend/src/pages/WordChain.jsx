@@ -5,7 +5,7 @@ import { ArrowLeft, Plus, X, Sparkles, BookOpen } from 'lucide-react';
 import axios from 'axios';
 
 const StoryWithChain = ({ storyTokens, story }) => {
-    if (!storyTokens || !storyTokens.length) {
+    if (!storyTokens?.length) {
         return <p className="text-sm leading-relaxed">{story}</p>;
     }
 
@@ -86,7 +86,7 @@ export default function WordChain() {
                 const res = await API.get(`/wordchain/words?level=${level}`);
                 allWords.push(...res.data);
             }
-            const shuffled = allWords.sort(() => Math.random() - 0.5);
+            const shuffled = allWords.toSorted(() => Math.random() - 0.5);
             setAvailableWords(shuffled);
         } catch {
             setError('Kelimeler yüklenemedi');
@@ -203,7 +203,7 @@ export default function WordChain() {
                             ) : (
                                 <div className="flex flex-wrap gap-2">
                                     {selectedWords.map((word, i) => (
-                                        <div key={i} className="flex items-center gap-1">
+                                        <div key={word} className="flex items-center gap-1">
                                             <div className="flex items-center gap-1 px-3 py-1.5 rounded-xl gradient-bg text-white text-sm font-semibold">
                                                 <span>{word}</span>
                                                 {i === selectedWords.length - 1 && (
@@ -303,14 +303,6 @@ export default function WordChain() {
                                         ? selectedWords[selectedWords.length - 1].slice(-1).toLowerCase()
                                         : null;
 
-                                    const sorted = [...availableWords].sort((a, b) => {
-                                        const aMatch = lastChar && a.EngWordName[0].toLowerCase() === lastChar;
-                                        const bMatch = lastChar && b.EngWordName[0].toLowerCase() === lastChar;
-                                        if (aMatch && !bMatch) return -1;
-                                        if (!aMatch && bMatch) return 1;
-                                        return 0;
-                                    });
-
                                     // Her harften max 4, ama zincire uyanlarda limit yok
                                     const letterCount = {};
                                     const nonMatchFiltered = availableWords.filter(word => {
@@ -336,19 +328,18 @@ export default function WordChain() {
                                         const selected = selectedWords.includes(eng);
                                         const isNextMatch = lastChar && eng[0].toLowerCase() === lastChar;
 
+                                        let wordClass;
+                                        if (selected) wordClass = 'bg-primary/20 border-primary/30 text-primary/50 cursor-default';
+                                        else if (isNextMatch) wordClass = 'border-primary bg-primary/10 text-primary cursor-pointer hover:bg-primary/20';
+                                        else if (valid || selectedWords.length === 0) wordClass = 'border-border hover:border-primary/50 hover:bg-primary/5 text-foreground cursor-pointer';
+                                        else wordClass = 'border-border/30 text-muted-foreground/30 cursor-not-allowed';
+
                                         return (
                                             <button
                                                 key={eng}
                                                 onClick={() => addWord(eng)}
                                                 disabled={selected || (!valid && selectedWords.length > 0)}
-                                                className={`px-3 py-1.5 rounded-xl text-sm font-medium border transition-all ${selected
-                                                    ? 'bg-primary/20 border-primary/30 text-primary/50 cursor-default'
-                                                    : isNextMatch
-                                                        ? 'border-primary bg-primary/10 text-primary cursor-pointer hover:bg-primary/20'
-                                                        : valid || selectedWords.length === 0
-                                                            ? 'border-border hover:border-primary/50 hover:bg-primary/5 text-foreground cursor-pointer'
-                                                            : 'border-border/30 text-muted-foreground/30 cursor-not-allowed'
-                                                    }`}>
+                                                className={`px-3 py-1.5 rounded-xl text-sm font-medium border transition-all ${wordClass}`}>
                                                 {eng}
                                                 {isNextMatch && !selected && (
                                                     <Plus className="w-3 h-3 inline ml-1" />

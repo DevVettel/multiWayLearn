@@ -26,9 +26,9 @@ function getUnlockedLevels(userID) {
 router.get('/word', authMiddleware, (req, res) => {
   const userID = req.user.userID;
 
-  const validLevels = ['A1', 'A2', 'B1'];
+  const validLevels = new Set(['A1', 'A2', 'B1']);
   const requestedLevels = (typeof req.query.levels === 'string' && req.query.levels)
-    ? req.query.levels.split(',').filter(l => validLevels.includes(l))
+    ? req.query.levels.split(',').filter(l => validLevels.has(l))
     : null;
 
   const activeLevels = (requestedLevels && requestedLevels.length > 0)
@@ -60,6 +60,30 @@ router.get('/word', authMiddleware, (req, res) => {
   });
 });
 
+function markGreens(guessArr, targetArr, result, targetUsed, guessUsed) {
+  for (let i = 0; i < 5; i++) {
+    if (guessArr[i] === targetArr[i]) {
+      result[i] = 'correct';
+      targetUsed[i] = true;
+      guessUsed[i] = true;
+    }
+  }
+}
+
+function markYellows(guessArr, targetArr, result, targetUsed, guessUsed) {
+  for (let i = 0; i < 5; i++) {
+    if (guessUsed[i]) continue;
+    for (let j = 0; j < 5; j++) {
+      if (targetUsed[j]) continue;
+      if (guessArr[i] === targetArr[j]) {
+        result[i] = 'present';
+        targetUsed[j] = true;
+        break;
+      }
+    }
+  }
+}
+
 // Tahmin kontrolü
 router.post('/guess', authMiddleware, (req, res) => {
   const { guess, target } = req.body;
@@ -76,33 +100,14 @@ router.post('/guess', authMiddleware, (req, res) => {
   const targetUpper = String(target).toUpperCase();
 
   // Wordle algoritması
-  const result = Array(5).fill('absent');
+  const result = new Array(5).fill('absent');
   const targetArr = targetUpper.split('');
   const guessArr = guessUpper.split('');
-  const targetUsed = Array(5).fill(false);
-  const guessUsed = Array(5).fill(false);
+  const targetUsed = new Array(5).fill(false);
+  const guessUsed = new Array(5).fill(false);
 
-  // Önce yeşilleri bul
-  for (let i = 0; i < 5; i++) {
-    if (guessArr[i] === targetArr[i]) {
-      result[i] = 'correct';
-      targetUsed[i] = true;
-      guessUsed[i] = true;
-    }
-  }
-
-  // Sonra sarıları bul
-  for (let i = 0; i < 5; i++) {
-    if (guessUsed[i]) continue;
-    for (let j = 0; j < 5; j++) {
-      if (targetUsed[j]) continue;
-      if (guessArr[i] === targetArr[j]) {
-        result[i] = 'present';
-        targetUsed[j] = true;
-        break;
-      }
-    }
-  }
+  markGreens(guessArr, targetArr, result, targetUsed, guessUsed);
+  markYellows(guessArr, targetArr, result, targetUsed, guessUsed);
 
   const isWon = guessUpper === targetUpper;
 

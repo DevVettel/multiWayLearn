@@ -23,7 +23,7 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 function escapeRegExp(str) {
-    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return str.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
 }
 
 // Hikayeyi token'lara ayır
@@ -109,7 +109,7 @@ STRICT RULES:
 `;
 
         const storyResult = await storyModel.generateContent(storyPrompt);
-        const story = storyResult.response.text().trim().replace(/\*\*/g, '');
+        const story = storyResult.response.text().trim().replaceAll('**', '');
 
         // 2. Replicate ile görsel üret (opsiyonel)
         let imagePath = null;
@@ -205,8 +205,8 @@ router.get('/stories', authMiddleware, (req, res) => {
 // Tüm sistem kelimelerini getir (seviyeye göre)
 router.get('/words', authMiddleware, (req, res) => {
   const level = req.query.level || 'A1';
-  const validLevels = ['A1', 'A2', 'B1'];
-  if (!validLevels.includes(level)) {
+  const validLevels = new Set(['A1', 'A2', 'B1']);
+  if (!validLevels.has(level)) {
     return res.status(400).json({ error: 'Geçersiz seviye' });
   }
 

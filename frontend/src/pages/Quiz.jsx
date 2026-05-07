@@ -84,9 +84,9 @@ export default function Quiz() {
   };
 
   const handleNext = () => {
-    const newSkipped = !result?.correct
-      ? [...skippedIDs, question.systemWordID]
-      : skippedIDs;
+    const newSkipped = result?.correct
+      ? skippedIDs
+      : [...skippedIDs, question.systemWordID];
     setSkippedIDs(newSkipped);
     fetchNext(newSkipped);
   };
@@ -239,7 +239,7 @@ export default function Quiz() {
                   else style = 'bg-card border-border opacity-50';
                 }
                 return (
-                  <button key={i} onClick={() => handleAnswer(option)}
+                  <button key={option.text} onClick={() => handleAnswer(option)}
                     className={`rounded-2xl border p-5 text-left transition-all duration-200 ${style}`}>
                     <div className="flex items-center justify-between">
                       <span className="font-semibold text-foreground">{option.text}</span>

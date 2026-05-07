@@ -102,6 +102,11 @@ export default function Words() {
     }
   };
 
+  let submitLabel;
+  if (loading) submitLabel = 'İşleniyor...';
+  else if (editingWord) submitLabel = 'Güncelle';
+  else submitLabel = 'Kelime Ekle';
+
   return (
     <div className="min-h-screen bg-background">
 
@@ -151,15 +156,15 @@ export default function Words() {
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2 text-foreground">İngilizce Kelime *</label>
-                  <input type="text" value={form.engWord}
+                  <label htmlFor="engWord" className="block text-sm font-medium mb-2 text-foreground">İngilizce Kelime *</label>
+                  <input id="engWord" type="text" value={form.engWord}
                     onChange={(e) => setForm({ ...form, engWord: e.target.value })}
                     className="w-full px-4 py-3 rounded-xl bg-muted border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all"
                     placeholder="örn: apple" required />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2 text-foreground">Türkçe Karşılığı *</label>
-                  <input type="text" value={form.turWord}
+                  <label htmlFor="turWord" className="block text-sm font-medium mb-2 text-foreground">Türkçe Karşılığı *</label>
+                  <input id="turWord" type="text" value={form.turWord}
                     onChange={(e) => setForm({ ...form, turWord: e.target.value })}
                     className="w-full px-4 py-3 rounded-xl bg-muted border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all"
                     placeholder="örn: elma" required />
@@ -167,11 +172,11 @@ export default function Words() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2 text-foreground flex items-center gap-2">
+                <label htmlFor="sample-0" className="block text-sm font-medium mb-2 text-foreground flex items-center gap-2">
                   <FileText className="w-4 h-4" /> Örnek Cümleler
                 </label>
                 {form.samples.map((sample, i) => (
-                  <input key={i} type="text" value={sample}
+                  <input key={`sample-${i}`} id={`sample-${i}`} type="text" value={sample}
                     onChange={(e) => {
                       const newSamples = [...form.samples];
                       newSamples[i] = e.target.value;
@@ -183,10 +188,10 @@ export default function Words() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2 text-foreground flex items-center gap-2">
+                <label htmlFor="picture" className="block text-sm font-medium mb-2 text-foreground flex items-center gap-2">
                   <Image className="w-4 h-4" /> Resim (opsiyonel)
                 </label>
-                <input type="file" accept="image/*" onChange={handlePicture}
+                <input id="picture" type="file" accept="image/*" onChange={handlePicture}
                   className="w-full px-4 py-3 rounded-xl bg-muted border border-border text-foreground focus:outline-none transition-all" />
                 {picturePreview && (
                   <img src={picturePreview} alt="Önizleme"
@@ -197,7 +202,7 @@ export default function Words() {
               <div className="flex gap-3">
                 <button type="submit" disabled={loading}
                   className="flex-1 py-3 rounded-xl gradient-bg text-white font-semibold transition-all duration-300 hover:scale-[1.02] disabled:opacity-60">
-                  {loading ? 'İşleniyor...' : editingWord ? 'Güncelle' : 'Kelime Ekle'}
+                  {submitLabel}
                 </button>
                 <button type="button"
                   onClick={() => { setShowForm(false); setEditingWord(null); }}
@@ -236,7 +241,7 @@ export default function Words() {
                       {word.Samples?.length > 0 && (
                         <div className="space-y-1">
                           {word.Samples.map((sample, j) => (
-                            <p key={j} className="text-sm text-muted-foreground italic">"{sample}"</p>
+                            <p key={`sample-display-${j}`} className="text-sm text-muted-foreground italic">"{sample}"</p>
                           ))}
                         </div>
                       )}

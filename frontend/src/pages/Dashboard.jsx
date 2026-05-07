@@ -190,6 +190,9 @@ function Dashboard() {
           {stats.map((stat, i) => (
             <div key={stat.label}
               onClick={() => stat.label === 'Günlük Hedef' && navigate('/settings')}
+              role={stat.label === 'Günlük Hedef' ? 'button' : undefined}
+              tabIndex={stat.label === 'Günlük Hedef' ? 0 : undefined}
+              onKeyDown={stat.label === 'Günlük Hedef' ? (e) => { if (e.key === 'Enter') navigate('/settings'); } : undefined}
               className={`opacity-0 animate-fade-in-up stagger-${i + 1} bg-card rounded-2xl border border-border p-6 shadow-card transition-all duration-300 hover:shadow-card-hover hover:scale-[1.02] group ${stat.label === 'Günlük Hedef' ? 'cursor-pointer hover:border-primary/50' : ''}`}>
               <stat.icon className={`w-8 h-8 mb-3 ${stat.color} transition-transform duration-300 group-hover:scale-110`} />
               <p className="text-3xl font-bold font-display text-foreground">{stat.value}</p>
@@ -232,6 +235,14 @@ function Dashboard() {
                     navigate('/quiz', { state: { activeLevels } });
                   } else {
                     navigate(feature.path);
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    if (feature.path === '/quiz') navigate('/quiz', { state: { activeLevels } });
+                    else navigate(feature.path);
                   }
                 }}
                 className={`opacity-0 animate-fade-in-up stagger-${i + 4} bg-card rounded-2xl border border-border p-6 shadow-card transition-all duration-300 hover:shadow-card-hover hover:scale-[1.02] group cursor-pointer`}>

@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const path = require('path');
+const path = require('node:path');
 const db = require('../database/db');
 const authMiddleware = require('../middleware/auth');
 
@@ -78,7 +78,7 @@ router.post('/', authMiddleware, upload.single('picture'), (req, res) => {
     }
 
     res.json({ message: 'Kelime eklendi', wordID });
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: 'Kelime eklenirken hata oluştu' });
   }
 });
@@ -92,7 +92,7 @@ router.delete('/:id', authMiddleware, (req, res) => {
     db.prepare('DELETE FROM Words WHERE WordID = ? AND CreatedBy = ?')
       .run(wordID, req.user.userID);
     res.json({ message: 'Kelime silindi' });
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: 'Kelime silinirken hata oluştu' });
   }
 });

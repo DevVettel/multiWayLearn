@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Brain } from "lucide-react";
 import { ThemeToggle } from "../components/ThemeToggle";
 import { login, register } from "../services/api";
@@ -35,6 +35,9 @@ export default function Login() {
     }
   };
 
+  const buttonLabel = isLogin ? "Giriş Yap" : "Kayıt Ol";
+  const loadingLabel = isLogin ? "Giriş yapılıyor..." : "Kaydediliyor...";
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background transition-colors duration-500 px-4">
 
@@ -69,10 +72,11 @@ export default function Login() {
           <form onSubmit={handleSubmit} className="space-y-5">
             {!isLogin && (
               <div className="opacity-0 animate-fade-in-up stagger-1">
-                <label className="block text-sm font-medium mb-2 text-foreground">
+                <label htmlFor="username" className="block text-sm font-medium mb-2 text-foreground">
                   Kullanıcı Adı
                 </label>
                 <input
+                  id="username"
                   type="text"
                   value={form.username}
                   onChange={(e) => setForm({ ...form, username: e.target.value })}
@@ -83,8 +87,9 @@ export default function Login() {
             )}
 
             <div className={`opacity-0 animate-fade-in-up ${isLogin ? "stagger-1" : "stagger-2"}`}>
-              <label className="block text-sm font-medium mb-2 text-foreground">Email</label>
+              <label htmlFor="email" className="block text-sm font-medium mb-2 text-foreground">Email</label>
               <input
+                id="email"
                 type="email"
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
@@ -95,9 +100,10 @@ export default function Login() {
             </div>
 
             <div className={`opacity-0 animate-fade-in-up ${isLogin ? "stagger-2" : "stagger-3"}`}>
-              <label className="block text-sm font-medium mb-2 text-foreground">Şifre</label>
+              <label htmlFor="password" className="block text-sm font-medium mb-2 text-foreground">Şifre</label>
               <div className="relative">
                 <input
+                  id="password"
                   type={showPassword ? "text" : "password"}
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
@@ -127,9 +133,9 @@ export default function Login() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
                     </svg>
-                    {isLogin ? "Giriş yapılıyor..." : "Kaydediliyor..."}
+                    {loadingLabel}
                   </span>
-                ) : isLogin ? "Giriş Yap" : "Kayıt Ol"}
+                ) : buttonLabel}
               </button>
             </div>
           </form>
