@@ -158,8 +158,7 @@ function Dashboard() {
               display: "flex", alignItems: "center", justifyContent: "center",
               boxShadow: "0 4px 12px hsl(var(--primary) / 0.3)",
             }}
-              onMouseEnter={e => e.currentTarget.style.transform = "scale(1.1)"}
-              onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+              className="transition-transform duration-300 hover:scale-110"
             >
               <Brain className="w-5 h-5 text-white" />
             </div>
@@ -187,18 +186,25 @@ function Dashboard() {
 
         {/* İstatistik kartları */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {stats.map((stat, i) => (
-            <div key={stat.label}
-              onClick={() => stat.label === 'Günlük Hedef' && navigate('/settings')}
-              role={stat.label === 'Günlük Hedef' ? 'button' : undefined}
-              tabIndex={stat.label === 'Günlük Hedef' ? 0 : undefined}
-              onKeyDown={stat.label === 'Günlük Hedef' ? (e) => { if (e.key === 'Enter') navigate('/settings'); } : undefined}
-              className={`opacity-0 animate-fade-in-up stagger-${i + 1} bg-card rounded-2xl border border-border p-6 shadow-card transition-all duration-300 hover:shadow-card-hover hover:scale-[1.02] group ${stat.label === 'Günlük Hedef' ? 'cursor-pointer hover:border-primary/50' : ''}`}>
-              <stat.icon className={`w-8 h-8 mb-3 ${stat.color} transition-transform duration-300 group-hover:scale-110`} />
-              <p className="text-3xl font-bold font-display text-foreground">{stat.value}</p>
-              <p className="text-sm text-muted-foreground mt-1">{stat.label}</p>
-            </div>
-          ))}
+          {stats.map((stat, i) => {
+            const cardClass = `opacity-0 animate-fade-in-up stagger-${i + 1} bg-card rounded-2xl border border-border p-6 shadow-card transition-all duration-300 hover:shadow-card-hover hover:scale-[1.02] group`;
+            const inner = (
+              <>
+                <stat.icon className={`w-8 h-8 mb-3 ${stat.color} transition-transform duration-300 group-hover:scale-110`} />
+                <p className="text-3xl font-bold font-display text-foreground">{stat.value}</p>
+                <p className="text-sm text-muted-foreground mt-1">{stat.label}</p>
+              </>
+            );
+            if (stat.label === 'Günlük Hedef') {
+              return (
+                <button key={stat.label} onClick={() => navigate('/settings')}
+                  className={`${cardClass} cursor-pointer hover:border-primary/50 text-left`}>
+                  {inner}
+                </button>
+              );
+            }
+            return <div key={stat.label} className={cardClass}>{inner}</div>;
+          })}
         </div>
 
         {/* Seviye ilerleme kartları */}
@@ -229,7 +235,7 @@ function Dashboard() {
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">Modüller</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {features.map((feature, i) => (
-              <div key={feature.title}
+              <button key={feature.title}
                 onClick={() => {
                   if (feature.path === '/quiz') {
                     navigate('/quiz', { state: { activeLevels } });
@@ -237,15 +243,7 @@ function Dashboard() {
                     navigate(feature.path);
                   }
                 }}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    if (feature.path === '/quiz') navigate('/quiz', { state: { activeLevels } });
-                    else navigate(feature.path);
-                  }
-                }}
-                className={`opacity-0 animate-fade-in-up stagger-${i + 4} bg-card rounded-2xl border border-border p-6 shadow-card transition-all duration-300 hover:shadow-card-hover hover:scale-[1.02] group cursor-pointer`}>
+                className={`opacity-0 animate-fade-in-up stagger-${i + 4} bg-card rounded-2xl border border-border p-6 shadow-card transition-all duration-300 hover:shadow-card-hover hover:scale-[1.02] group cursor-pointer w-full text-left`}>
                 <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3`}>
                   <feature.icon className="w-6 h-6 text-white" />
                 </div>
@@ -254,7 +252,7 @@ function Dashboard() {
                 <span className="inline-flex items-center gap-1 mt-4 text-sm font-medium text-primary transition-all duration-300 group-hover:gap-2">
                   Aç <ArrowRight className="w-4 h-4" />
                 </span>
-              </div>
+              </button>
             ))}
           </div>
         </div>

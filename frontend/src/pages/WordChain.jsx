@@ -11,7 +11,7 @@ const StoryWithChain = ({ storyTokens, story }) => {
 
     return (
         <p className="text-sm leading-relaxed">
-            {storyTokens.map((token, i) => {
+            {Array.from(storyTokens.entries()).map(([i, token]) => {
                 if (token.type === 'text') {
                     return <span key={`text-${i}`}>{token.text}</span>;
                 }
@@ -258,8 +258,7 @@ export default function WordChain() {
                                         ? 'border-primary bg-primary/10 text-primary'
                                         : 'border-border text-muted-foreground hover:border-primary/50'
                                 }`}>
-                                🖼️
-                                <span className="text-xs">{generateImage ? 'Görsel Açık' : 'Görsel'}</span>
+                                <span className="text-xs">🖼️ {generateImage ? 'Görsel Açık' : 'Görsel'}</span>
                             </button>
                         </div>
 

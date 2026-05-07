@@ -137,11 +137,11 @@ export default function Wordle() {
   const rows = [];
   for (let i = 0; i < MAX_GUESSES; i++) {
     if (i < guesses.length) {
-      rows.push({ type: 'done', data: guesses[i] });
+      rows.push({ type: 'done', data: guesses[i], id: i });
     } else if (i === guesses.length && !gameOver) {
-      rows.push({ type: 'current', data: currentGuess });
+      rows.push({ type: 'current', data: currentGuess, id: i });
     } else {
-      rows.push({ type: 'empty', data: '' });
+      rows.push({ type: 'empty', data: '', id: i });
     }
   }
 
@@ -238,9 +238,9 @@ export default function Wordle() {
       {/* Izgara */}
       <div className="flex-1 flex items-center justify-center py-6">
         <div className="flex flex-col gap-2">
-          {rows.map((row, rowIdx) => (
+          {rows.map((row) => (
             <div
-              key={`row-${rowIdx}`}
+              key={`row-${row.id}`}
               className={`flex gap-2 ${row.type === 'current' && shake ? 'animate-bounce' : ''}`}>
               {new Array(WORD_LENGTH).fill(null).map((_, colIdx) => {
                 let letter = '';
@@ -269,8 +269,8 @@ export default function Wordle() {
 
       {/* Klavye */}
       <div className="pb-8 px-4 max-w-lg mx-auto w-full">
-        {KEYBOARD_ROWS.map((row, i) => (
-          <div key={`keyboard-row-${i}`} className="flex justify-center gap-1.5 mb-1.5">
+        {KEYBOARD_ROWS.map((row) => (
+          <div key={row[0]} className="flex justify-center gap-1.5 mb-1.5">
             {row.map(key => {
               const isSpecial = key === 'ENTER' || key === 'DEL';
               const state = letterStates[key];

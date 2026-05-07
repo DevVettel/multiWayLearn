@@ -175,15 +175,15 @@ export default function Words() {
                 <label htmlFor="sample-0" className="block text-sm font-medium mb-2 text-foreground flex items-center gap-2">
                   <FileText className="w-4 h-4" /> Örnek Cümleler
                 </label>
-                {form.samples.map((sample, i) => (
-                  <input key={`sample-${i}`} id={`sample-${i}`} type="text" value={sample}
+                {[0, 1, 2].map((pos) => (
+                  <input key={`sample-${pos}`} id={`sample-${pos}`} type="text" value={form.samples[pos]}
                     onChange={(e) => {
                       const newSamples = [...form.samples];
-                      newSamples[i] = e.target.value;
+                      newSamples[pos] = e.target.value;
                       setForm({ ...form, samples: newSamples });
                     }}
                     className="w-full px-4 py-3 rounded-xl bg-muted border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all mb-2"
-                    placeholder={`${i + 1}. örnek cümle`} />
+                    placeholder={`${pos + 1}. örnek cümle`} />
                 ))}
               </div>
 
@@ -240,8 +240,8 @@ export default function Words() {
                       </div>
                       {word.Samples?.length > 0 && (
                         <div className="space-y-1">
-                          {word.Samples.map((sample, j) => (
-                            <p key={`sample-display-${j}`} className="text-sm text-muted-foreground italic">"{sample}"</p>
+                          {word.Samples.map((sample) => (
+                            <p key={sample} className="text-sm text-muted-foreground italic">"{sample}"</p>
                           ))}
                         </div>
                       )}
