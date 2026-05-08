@@ -55,7 +55,9 @@ app.use((req, res) => {
 // Merkezi hata yakalayıcı — tüm route'lardaki next(err) buraya düşer
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
-  console.error('[ERROR]', req.method, req.path, err);
+  const safeMethod = String(req.method).replace(/[\r\n\t]/g, ' ');
+  const safePath = String(req.path).replace(/[\r\n\t]/g, ' ');
+  console.error('[ERROR]', safeMethod, safePath, err.message);
   const status = err.status || err.statusCode || 500;
   res.status(status).json({ error: status === 500 ? 'Sunucu hatasi' : err.message });
 });

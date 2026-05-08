@@ -4,7 +4,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const db = require('../database/db');
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_REGEX = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9\-]+(?:\.[a-zA-Z0-9\-]+)+$/;
 
 // KAYIT OL
 router.post('/register', (req, res) => {
@@ -18,7 +18,7 @@ router.post('/register', (req, res) => {
     return res.status(400).json({ error: 'Kullanici adi 3-50 karakter olmalidir' });
   }
 
-  if (typeof email !== 'string' || !EMAIL_REGEX.test(email) || email.length > 255) {
+  if (typeof email !== 'string' || email.length > 255 || !EMAIL_REGEX.test(email)) {
     return res.status(400).json({ error: 'Gecersiz email adresi' });
   }
 
