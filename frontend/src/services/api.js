@@ -21,7 +21,8 @@ export const getWords = () => API.get('/words');
 export const addWord = (data) => API.post('/words', data);
 export const deleteWord = (id) => {
   if (!Number.isInteger(id) || id <= 0) throw new Error('Geçersiz kelime ID');
-  return API.delete(`/words/${encodeURIComponent(String(id))}`);
+  const safeId = Number(id);
+  return API.delete(`/words/${safeId}`);
 };
 
 // Seviye sistemi

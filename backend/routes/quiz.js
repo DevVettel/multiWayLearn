@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../database/db');
 const authMiddleware = require('../middleware/auth');
+const { getUnlockedLevels } = require('../utils/levels');
 
 const REVIEW_INTERVALS = [1, 7, 30, 90, 180, 365];
 
@@ -26,26 +27,6 @@ function getTodayCount(userID) {
     AND date(LastSeen) = date('now')
     AND LastSeen IS NOT NULL
   `).get(userID).count;
-}
-
-function getUnlockedLevels(userID) {
-  const unlocked = ['A1'];
-  const a1Learned = db.prepare(`
-    SELECT COUNT(*) as count FROM UserWordProgress uwp
-    JOIN SystemWords sw ON uwp.SystemWordID = sw.SystemWordID
-    WHERE uwp.UserID = ? AND sw.Level = 'A1' AND uwp.IsLearned = 1
-  `).get(userID).count;
-
-  if (a1Learned >= 350) {
-    unlocked.push('A2');
-    const a2Learned = db.prepare(`
-      SELECT COUNT(*) as count FROM UserWordProgress uwp
-      JOIN SystemWords sw ON uwp.SystemWordID = sw.SystemWordID
-      WHERE uwp.UserID = ? AND sw.Level = 'A2' AND uwp.IsLearned = 1
-    `).get(userID).count;
-    if (a2Learned >= 250) unlocked.push('B1');
-  }
-  return unlocked;
 }
 
 // Quiz sorusu getir
