@@ -24,6 +24,7 @@ API.interceptors.response.use(
 // Auth
 export const register = (data) => API.post('/auth/register', data);
 export const login = (data) => API.post('/auth/login', data);
+export const forgotPassword = (email) => API.post('/auth/forgot-password', { email });
 
 const VALID_LEVELS = new Set(['A1', 'A2', 'B1']);
 

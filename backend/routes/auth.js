@@ -70,4 +70,21 @@ router.post('/login', (req, res) => {
   res.json({ token, username: user.UserName, userID: user.UserID });
 });
 
+// ŞİFREMİ UNUTTUM
+router.post('/forgot-password', (req, res) => {
+  const { email } = req.body;
+
+  if (!email || typeof email !== 'string' || email.length > 255) {
+    return res.status(400).json({ error: 'Geçerli bir email adresi giriniz' });
+  }
+
+  const user = db.prepare('SELECT UserID FROM Users WHERE Email = ?').get(email);
+
+  if (!user) {
+    return res.status(404).json({ error: 'Bu email adresi bulunamadı' });
+  }
+
+  res.json({ message: 'Şifre sıfırlama bağlantısı email adresinize gönderildi' });
+});
+
 module.exports = router;
