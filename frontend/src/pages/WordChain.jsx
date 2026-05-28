@@ -51,7 +51,7 @@ StoryWithChain.propTypes = {
 
 const getSafeImageUrl = (imagePath) => {
     if (!imagePath) return null;
-    if (!/^\/uploads\/story_\d+_\d+\.png$/.test(imagePath)) return null;
+    if (!/^\/uploads\/story_\d+_\d+\.(png|jpg|jpeg|webp)$/i.test(imagePath)) return null;
     return `http://localhost:3001${imagePath}`;
 };
 

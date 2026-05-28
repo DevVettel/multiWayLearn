@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const db = require('../database/db');
 const authMiddleware = require('../middleware/auth');
 const { getUnlockedLevels } = require('../utils/levels');
 
@@ -18,12 +19,25 @@ router.get('/word', authMiddleware, (req, res) => {
 
   const placeholders = activeLevels.map(() => '?').join(',');
 
-  const words = db.prepare(`
-    SELECT EngWordName FROM SystemWords
-    WHERE Level IN (${placeholders})
-    AND length(EngWordName) = 5
-    ORDER BY SystemWordID ASC
-  `).all(...activeLevels);
+  // Kullanıcının öğrendiği 5 harfli kelimeler (Story 6: öğrenilen kelimelerden oluşmalı)
+  let words = db.prepare(`
+    SELECT sw.EngWordName FROM SystemWords sw
+    JOIN UserWordProgress uwp ON sw.SystemWordID = uwp.SystemWordID
+    WHERE uwp.UserID = ? AND uwp.IsLearned = 1
+    AND sw.Level IN (${placeholders})
+    AND length(sw.EngWordName) = 5
+    ORDER BY sw.SystemWordID ASC
+  `).all(userID, ...activeLevels);
+
+  // Öğrenilen kelime yoksa tüm seviye kelimelerini kullan
+  if (words.length === 0) {
+    words = db.prepare(`
+      SELECT EngWordName FROM SystemWords
+      WHERE Level IN (${placeholders})
+      AND length(EngWordName) = 5
+      ORDER BY SystemWordID ASC
+    `).all(...activeLevels);
+  }
 
   if (words.length === 0) {
     return res.status(404).json({ error: 'Uygun kelime bulunamadı' });

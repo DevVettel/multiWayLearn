@@ -73,7 +73,7 @@ router.get('/words/:level', authMiddleware, (req, res) => {
     FROM SystemWords sw
     LEFT JOIN UserWordProgress uwp ON sw.SystemWordID = uwp.SystemWordID AND uwp.UserID = ?
     WHERE sw.Level = ?
-    ORDER BY uwp.NextReview ASC NULLS FIRST
+    ORDER BY CASE WHEN uwp.NextReview IS NULL THEN 0 ELSE 1 END, uwp.NextReview ASC
     LIMIT 20
   `).all(userID, level);
 
