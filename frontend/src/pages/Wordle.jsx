@@ -256,7 +256,7 @@ export default function Wordle() {
 
                 return (
                   <div
-                    key={`col-${rowIdx}-${colIdx}`}
+                    key={`col-${row.id}-${colIdx}`}
                     className={`w-14 h-14 border-2 rounded-2xl flex items-center justify-center text-xl font-bold font-display transition-all duration-300 ${colorClass}`}>
                     {letter}
                   </div>
