@@ -4,6 +4,52 @@ import { Eye, EyeOff, Brain } from "lucide-react";
 import { ThemeToggle } from "../components/ThemeToggle";
 import { login, register, forgotPassword } from "../services/api";
 
+function getSubtitle(view) {
+  if (view === "login") return "Hesabına giriş yap";
+  if (view === "register") return "Yeni hesap oluştur";
+  return "Şifre sıfırlama";
+}
+
+function FooterLink({ view, switchView }) {
+  if (view === "forgot") {
+    return (
+      <>
+        Şifreni hatırladın mı?{" "}
+        <button
+          onClick={() => switchView("login")}
+          className="text-primary font-semibold hover:underline underline-offset-4 transition-all duration-200"
+        >
+          Giriş Yap
+        </button>
+      </>
+    );
+  }
+  if (view === "login") {
+    return (
+      <>
+        Hesabın yok mu?{" "}
+        <button
+          onClick={() => switchView("register")}
+          className="text-primary font-semibold hover:underline underline-offset-4 transition-all duration-200"
+        >
+          Kayıt Ol
+        </button>
+      </>
+    );
+  }
+  return (
+    <>
+      Zaten hesabın var mı?{" "}
+      <button
+        onClick={() => switchView("login")}
+        className="text-primary font-semibold hover:underline underline-offset-4 transition-all duration-200"
+      >
+        Giriş Yap
+      </button>
+    </>
+  );
+}
+
 // view: 'login' | 'register' | 'forgot'
 export default function Login() {
   const [view, setView] = useState("login");
@@ -21,20 +67,28 @@ export default function Login() {
     setSuccess("");
   };
 
+  const handleLogin = async () => {
+    const res = await login({ email: form.email, password: form.password });
+    localStorage.setItem("token", res.data.token);
+    localStorage.setItem("username", res.data.username);
+    localStorage.setItem("userID", res.data.userID);
+    navigate("/dashboard");
+  };
+
+  const handleRegister = async () => {
+    await register({ username: form.username, email: form.email, password: form.password });
+    switchView("login");
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
     try {
       if (view === "login") {
-        const res = await login({ email: form.email, password: form.password });
-        localStorage.setItem("token", res.data.token);
-        localStorage.setItem("username", res.data.username);
-        localStorage.setItem("userID", res.data.userID);
-        navigate("/dashboard");
+        await handleLogin();
       } else {
-        await register({ username: form.username, email: form.email, password: form.password });
-        switchView("login");
+        await handleRegister();
       }
     } catch (err) {
       setError(err.response?.data?.error || "Bir hata oluştu");
@@ -60,6 +114,9 @@ export default function Login() {
 
   const buttonLabel = view === "login" ? "Giriş Yap" : "Kayıt Ol";
   const loadingLabel = view === "login" ? "Giriş yapılıyor..." : "Kaydediliyor...";
+  const emailStagger = view === "login" ? "stagger-1" : "stagger-2";
+  const passwordStagger = view === "login" ? "stagger-2" : "stagger-3";
+  const submitStagger = view === "login" ? "stagger-3" : "stagger-4";
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background transition-colors duration-500 px-4">
@@ -79,7 +136,7 @@ export default function Login() {
             MultiWay<span className="gradient-text">Learn</span>
           </h1>
           <p className="text-muted-foreground mt-2 text-sm tracking-wide">
-            {view === "login" ? "Hesabına giriş yap" : view === "register" ? "Yeni hesap oluştur" : "Şifre sıfırlama"}
+            {getSubtitle(view)}
           </p>
         </div>
 
@@ -150,7 +207,7 @@ export default function Login() {
                 </div>
               )}
 
-              <div className={`opacity-0 animate-fade-in-up ${view === "login" ? "stagger-1" : "stagger-2"}`}>
+              <div className={`opacity-0 animate-fade-in-up ${emailStagger}`}>
                 <label htmlFor="email" className="block text-sm font-medium mb-2 text-foreground">Email</label>
                 <input
                   id="email"
@@ -163,7 +220,7 @@ export default function Login() {
                 />
               </div>
 
-              <div className={`opacity-0 animate-fade-in-up ${view === "login" ? "stagger-2" : "stagger-3"}`}>
+              <div className={`opacity-0 animate-fade-in-up ${passwordStagger}`}>
                 <div className="flex items-center justify-between mb-2">
                   <label htmlFor="password" className="block text-sm font-medium text-foreground">Şifre</label>
                   {view === "login" && (
@@ -196,7 +253,7 @@ export default function Login() {
                 </div>
               </div>
 
-              <div className={`opacity-0 animate-fade-in-up ${view === "login" ? "stagger-3" : "stagger-4"}`}>
+              <div className={`opacity-0 animate-fade-in-up ${submitStagger}`}>
                 <button
                   type="submit"
                   disabled={loading}
@@ -218,37 +275,7 @@ export default function Login() {
         </div>
 
         <p className="text-center mt-6 text-sm text-muted-foreground opacity-0 animate-fade-in-up stagger-5">
-          {view === "forgot" ? (
-            <>
-              Şifreni hatırladın mı?{" "}
-              <button
-                onClick={() => switchView("login")}
-                className="text-primary font-semibold hover:underline underline-offset-4 transition-all duration-200"
-              >
-                Giriş Yap
-              </button>
-            </>
-          ) : view === "login" ? (
-            <>
-              Hesabın yok mu?{" "}
-              <button
-                onClick={() => switchView("register")}
-                className="text-primary font-semibold hover:underline underline-offset-4 transition-all duration-200"
-              >
-                Kayıt Ol
-              </button>
-            </>
-          ) : (
-            <>
-              Zaten hesabın var mı?{" "}
-              <button
-                onClick={() => switchView("login")}
-                className="text-primary font-semibold hover:underline underline-offset-4 transition-all duration-200"
-              >
-                Giriş Yap
-              </button>
-            </>
-          )}
+          <FooterLink view={view} switchView={switchView} />
         </p>
       </div>
     </div>
