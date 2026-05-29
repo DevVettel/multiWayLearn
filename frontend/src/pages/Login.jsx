@@ -1,4 +1,5 @@
 import { useState } from "react";
+import PropTypes from "prop-types";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Brain } from "lucide-react";
 import { ThemeToggle } from "../components/ThemeToggle";
@@ -49,6 +50,11 @@ function FooterLink({ view, switchView }) {
     </>
   );
 }
+
+FooterLink.propTypes = {
+  view: PropTypes.string.isRequired,
+  switchView: PropTypes.func.isRequired,
+};
 
 // view: 'login' | 'register' | 'forgot'
 export default function Login() {
