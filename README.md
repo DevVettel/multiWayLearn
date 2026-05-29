@@ -114,7 +114,7 @@ Proje, SonarCloud ile sürekli statik analiz altındadır. En son Quality Gate s
 | Boyut | Durum |
 |-------|-------|
 | Quality Gate | **Passed** |
-| Güvenlik | B (1 açık konu) |
+| Güvenlik | A (0 açık konu) |
 | Güvenilirlik | A (0 açık konu) |
 | Bakım Kolaylığı | A (0 açık konu) |
 | Kod Tekrarı | 0.0% |
