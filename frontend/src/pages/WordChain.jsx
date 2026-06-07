@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, X, Sparkles, BookOpen } from 'lucide-react';
-import axios from 'axios';
+import { getWordchainWords, getWordchainStories, generateStory } from '../services/api';
 
 const StoryWithChain = ({ storyTokens, story }) => {
     if (!storyTokens?.length) {
@@ -49,18 +49,13 @@ StoryWithChain.propTypes = {
     story: PropTypes.string.isRequired,
 };
 
+const BASE_URL = import.meta.env.VITE_BASE_URL || 'http://localhost:3001';
+
 const getSafeImageUrl = (imagePath) => {
     if (!imagePath) return null;
     if (!/^\/uploads\/story_\d+_\d+\.(png|jpg|jpeg|webp)$/i.test(imagePath)) return null;
-    return `http://localhost:3001${imagePath}`;
+    return `${BASE_URL}${imagePath}`;
 };
-
-const API = axios.create({ baseURL: 'http://localhost:3001/api' });
-API.interceptors.request.use((config) => {
-    const token = localStorage.getItem('token');
-    if (token) config.headers.Authorization = `Bearer ${token}`;
-    return config;
-});
 
 export default function WordChain() {
     const navigate = useNavigate();
@@ -83,7 +78,7 @@ export default function WordChain() {
             const activeLevels = JSON.parse(localStorage.getItem('activeLevels') || '["A1"]');
             const allWords = [];
             for (const level of activeLevels) {
-                const res = await API.get(`/wordchain/words?level=${level}`);
+                const res = await getWordchainWords(level);
                 allWords.push(...res.data);
             }
             const shuffled = allWords.toSorted(() => Math.random() - 0.5);
@@ -95,7 +90,7 @@ export default function WordChain() {
 
     const fetchStories = async () => {
         try {
-            const res = await API.get('/wordchain/stories');
+            const res = await getWordchainStories();
             setStories(res.data);
         } catch {
             console.log('Hikayeler yüklenemedi');
@@ -138,7 +133,7 @@ export default function WordChain() {
         setError('');
         setResult(null);
         try {
-            const res = await API.post('/wordchain/generate', { words: selectedWords, generateImage });
+            const res = await generateStory({ words: selectedWords, generateImage });
             setResult(res.data);
             setSelectedWords([]);
             fetchStories();

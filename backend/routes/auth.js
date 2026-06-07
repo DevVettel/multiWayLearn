@@ -2,7 +2,21 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const crypto = require('node:crypto');
+const nodemailer = require('nodemailer');
 const db = require('../database/db');
+
+function createMailTransporter() {
+  return nodemailer.createTransport({
+    host: process.env.EMAIL_HOST,
+    port: Number(process.env.EMAIL_PORT) || 587,
+    secure: false,
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+}
 
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)+$/;
 
@@ -71,7 +85,7 @@ router.post('/login', (req, res) => {
 });
 
 // ŞİFREMİ UNUTTUM
-router.post('/forgot-password', (req, res) => {
+router.post('/forgot-password', async (req, res) => {
   const { email } = req.body;
 
   if (!email || typeof email !== 'string' || email.length > 255) {
@@ -80,11 +94,78 @@ router.post('/forgot-password', (req, res) => {
 
   const user = db.prepare('SELECT UserID FROM Users WHERE Email = ?').get(email);
 
+  // Kullanıcı yoksa da aynı mesajı döndür (email enumeration önleme)
   if (!user) {
-    return res.status(404).json({ error: 'Bu email adresi bulunamadı' });
+    return res.json({ message: 'Şifre sıfırlama bağlantısı email adresinize gönderildi' });
+  }
+
+  // Eski token varsa sil
+  db.prepare('DELETE FROM PasswordResets WHERE UserID = ?').run(user.UserID);
+
+  const token = crypto.randomBytes(32).toString('hex');
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 saat
+
+  db.prepare(
+    'INSERT INTO PasswordResets (UserID, Token, ExpiresAt) VALUES (?, ?, ?)'
+  ).run(user.UserID, token, expiresAt);
+
+  const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
+
+  try {
+    const transporter = createMailTransporter();
+    await transporter.sendMail({
+      from: process.env.EMAIL_FROM,
+      to: email,
+      subject: 'MultiWayLearn — Şifre Sıfırlama',
+      html: `
+        <div style="font-family:sans-serif;max-width:480px;margin:auto">
+          <h2>Şifre Sıfırlama</h2>
+          <p>Aşağıdaki bağlantıya tıklayarak şifreni sıfırlayabilirsin.</p>
+          <p>Bu bağlantı <strong>1 saat</strong> geçerlidir.</p>
+          <a href="${resetUrl}"
+             style="display:inline-block;padding:12px 24px;background:#6366f1;color:#fff;border-radius:8px;text-decoration:none;font-weight:bold">
+            Şifremi Sıfırla
+          </a>
+          <p style="margin-top:24px;color:#888;font-size:12px">
+            Bu emaili sen istemediysen güvende olabilirsin, hiçbir şey değişmedi.
+          </p>
+        </div>
+      `,
+    });
+  } catch (err) {
+    console.error('[EMAIL] Gönderilemedi:', err.message);
+    return res.status(500).json({ error: 'Email gönderilemedi, lütfen daha sonra tekrar deneyin' });
   }
 
   res.json({ message: 'Şifre sıfırlama bağlantısı email adresinize gönderildi' });
+});
+
+// ŞİFRE SIFIRLA
+router.post('/reset-password', (req, res) => {
+  const { token, password } = req.body;
+
+  if (!token || typeof token !== 'string' || !/^[a-f0-9]{64}$/.test(token)) {
+    return res.status(400).json({ error: 'Geçersiz token' });
+  }
+
+  if (!password || typeof password !== 'string' || password.length < 6 || password.length > 128) {
+    return res.status(400).json({ error: 'Şifre 6-128 karakter olmalıdır' });
+  }
+
+  const reset = db.prepare(
+    'SELECT * FROM PasswordResets WHERE Token = ? AND UsedAt IS NULL AND ExpiresAt > datetime("now")'
+  ).get(token);
+
+  if (!reset) {
+    return res.status(400).json({ error: 'Geçersiz veya süresi dolmuş link' });
+  }
+
+  const hashedPassword = bcrypt.hashSync(password, 10);
+
+  db.prepare('UPDATE Users SET Password = ? WHERE UserID = ?').run(hashedPassword, reset.UserID);
+  db.prepare('UPDATE PasswordResets SET UsedAt = datetime("now") WHERE ResetID = ?').run(reset.ResetID);
+
+  res.json({ message: 'Şifreniz başarıyla güncellendi' });
 });
 
 module.exports = router;

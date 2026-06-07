@@ -1,14 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Brain, CheckCircle, XCircle, Trophy, Target } from 'lucide-react';
-import axios from 'axios';
-
-const API = axios.create({ baseURL: 'http://localhost:3001/api' });
-API.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
+import { getNextQuestion, submitAnswer } from '../services/api';
 
 const STREAK_LABELS = ['', '1. Gün', '1. Hafta', '1. Ay', '3. Ay', '6. Ay', '1. Yıl ✓'];
 
@@ -35,11 +28,7 @@ export default function Quiz() {
     setSelected(null);
     setResult(null);
     try {
-      const params = new URLSearchParams();
-      if (currentSkipped.length > 0) params.append('skipped', currentSkipped.join(','));
-      params.append('levels', activeLevels.join(','));
-
-      const res = await API.get(`/quiz/next?${params.toString()}`);
+      const res = await getNextQuestion(activeLevels, currentSkipped);
       if (res.data.finished) {
         setFinishReason(res.data.reason || 'daily_goal');
         setDailyGoal(res.data.dailyGoal || 10);
@@ -62,10 +51,7 @@ export default function Quiz() {
     if (selected) return;
     setSelected(option);
     try {
-      const res = await API.post('/quiz/answer', {
-        systemWordID: question.systemWordID,
-        correct: option.correct
-      });
+      const res = await submitAnswer(question.systemWordID, option.correct);
       setResult(res.data);
       // Backend'den gelen güncel sayıları kullan
       if (res.data.todayCount !== undefined) setTodayCount(res.data.todayCount);

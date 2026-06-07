@@ -57,6 +57,14 @@ db.exec(`
     NextReview DATETIME DEFAULT CURRENT_TIMESTAMP,
     IsLearned INTEGER DEFAULT 0
   );
+
+  CREATE TABLE IF NOT EXISTS PasswordResets (
+    ResetID INTEGER PRIMARY KEY AUTOINCREMENT,
+    UserID INTEGER NOT NULL REFERENCES Users(UserID),
+    Token TEXT NOT NULL UNIQUE,
+    ExpiresAt DATETIME NOT NULL,
+    UsedAt DATETIME
+  );
 `);
 
 console.log('Veritabani baglantisi kuruldu');
