@@ -2,10 +2,6 @@
 
 > **6 Sefer Tekrar Prensibi** ile İngilizce kelime öğrenme platformu
 
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=DevVettel_multiWayLearn&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=DevVettel_multiWayLearn)
-[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=DevVettel_multiWayLearn&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=DevVettel_multiWayLearn)
-[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=DevVettel_multiWayLearn&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=DevVettel_multiWayLearn)
-[![Duplicated Lines (%)](https://sonarcloud.io/api/project_badges/measure?project=DevVettel_multiWayLearn&metric=duplicated_lines_density)](https://sonarcloud.io/summary/new_code?id=DevVettel_multiWayLearn)
 
 ---
 
@@ -53,7 +49,6 @@ Bir kelime "öğrenildi" sayılmak için 6 farklı zaman diliminde arka arkaya d
 | ORM | Prisma |
 | Kimlik Doğrulama | JWT · bcrypt |
 | LLM | Google Gemini API |
-| Kod Kalitesi | SonarCloud |
 
 ---
 
@@ -102,22 +97,6 @@ npm run dev
 ```
 
 Uygulama `http://localhost:5173` adresinde çalışır; API `http://localhost:3001` portunu kullanır.
-
----
-
-## Kod Kalitesi — SonarCloud
-
-Proje, SonarCloud ile sürekli statik analiz altındadır. En son Quality Gate sonucu:
-
-![SonarQube Passed](docs/sonarqube-passed.png)
-
-| Boyut | Durum |
-|-------|-------|
-| Quality Gate | **Passed** |
-| Güvenlik | A (0 açık konu) |
-| Güvenilirlik | A (0 açık konu) |
-| Bakım Kolaylığı | A (0 açık konu) |
-| Kod Tekrarı | 0.0% |
 
 ---
 
